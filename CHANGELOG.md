@@ -2,6 +2,15 @@
 
 All notable changes to this project are recorded here. Versions use one digit after the decimal point (… v1.8, v1.9, v2.0).
 
+## [v2.1] — 2026-10-06
+### Fixed
+- Summary «نسبة الإنجاز» showed 0 % until a task was closed as Completed, ignoring the progress entered in each task. It now reflects actual progress: average Progress % of all non-cancelled tasks (completed = 100 %).
+### Changed
+- Former completion rate renamed «نسبة الإكمال · Completed %» (completed tasks ÷ total); separate «متوسط التقدّم» column merged into «نسبة الإنجاز».
+- Dashboard: new KPI tile «نسبة الإنجاز · Progress».
+- «في الموعد» shows — instead of 0 % when no task is completed yet.
+- Short legend under the member table explaining the three measures.
+
 ## [v2.0] — 2026-10-06
 ### Changed
 - **Settings page hidden** from the navigation menu; the connection is pinned in `CONFIG.API_URL`, so team members no longer see or change it.

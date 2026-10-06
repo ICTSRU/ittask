@@ -1,4 +1,4 @@
-# إدارة مهام تقنية المعلومات · IT Task List Management — v2.0
+# إدارة مهام تقنية المعلومات · IT Task List Management — v2.1
 
 **Register, assign, track, and review departmental tasks** — Sulaiman Al Rajhi University · ICTD · IT Operations Center (ITOC)
 
@@ -15,13 +15,14 @@ A single-page, Arabic-first (RTL, bilingual labels) web app hosted on **GitHub P
 | Register / Edit | تسجيل مهمة | 4 sections: Task details → Assignment & schedule → Tracking & progress → Review & sign-off. Auto ID, progress slider, automatic **update log** (date · name · change) |
 | Summary | الملخص والتقارير | Period (week / month / quarter / year / custom) and sector filters; headline figures; performance by member and by sector; overdue & on-hold risk list; **print / save as PDF** |
 | Team | فريق العمل | Shows the **official ICTD names list**; add role, sector, email, mobile and extension per name (email enables reminders) |
-| Settings (hidden) | الإعدادات (مخفية) | Not in the menu since v2.0 — administrators open it with `index.html#settings` (Apps Script URL override, API key, name for the log, JSON backup, demo data) |
+| Settings (hidden) | الإعدادات (مخفية) | Not in the menu since v2.1 — administrators open it with `index.html#settings` (Apps Script URL override, API key, name for the log, JSON backup, demo data) |
 
 **Built-in business rules**
 - Saving a *New* task with an assignee → status becomes *Assigned*.
 - *Completed* → progress 100 % and completed date filled automatically.
 - Review result *Returned for rework* on an *Under Review* task → back to *In Progress*.
 - Overdue = open task with due date before today. On-time = completed on or before due date.
+- **Progress (نسبة الإنجاز)** = average Progress % of all non-cancelled tasks (completed = 100 %). **Completed % (نسبة الإكمال)** = tasks closed as Completed ÷ total.
 
 **Workflow:** `New → Assigned → In Progress ⇄ On Hold → Under Review → (Approved) Completed` · or `Cancelled`.
 
@@ -30,7 +31,7 @@ A single-page, Arabic-first (RTL, bilingual labels) web app hosted on **GitHub P
 ## 2. Repository structure · هيكل المستودع
 
 ```
-it-task-list-v2.0/
+it-task-list-v2.1/
 ├── index.html      ← the app (version shown in the header and footer)
 ├── Code.gs         ← Google Apps Script backend (paste into the Sheet's script editor)
 ├── README.md
@@ -63,7 +64,7 @@ it-task-list-v2.0/
 
 > After changing `Code.gs` later, use **Deploy → Manage deployments → Edit → New version** so the same URL keeps working.
 
-### Current connection (v2.0)
+### Current connection (v2.1)
 - Google Sheet: **سجل مهام تقنية المعلومات - ICTD Task Register** — `1cOZUlGSQt7_jqb3aXevGfCT0qTmywDFjS9s4oreKcxk`
 - Web App URL (set in `CONFIG.API_URL`): `https://script.google.com/macros/s/AKfycbxRA9He5zQE5--S7RueMEbR7S1kIVyz1nFZCIcf_-vQoRXY9DszeqPtLv95VwRhKenV/exec`
 
@@ -71,7 +72,7 @@ it-task-list-v2.0/
 
 1. Push the folder to a repository (e.g. inside `ictsru/ITOC`).
 2. **Settings → Pages → Deploy from branch → main / root**.
-3. App URL: `https://<org>.github.io/<repo>/it-task-list-v2.0/` — add it to the ITOC forms hub.
+3. App URL: `https://<org>.github.io/<repo>/it-task-list-v2.1/` — add it to the ITOC forms hub.
 
 ## 5. Automation · الأتمتة (recommended)
 
