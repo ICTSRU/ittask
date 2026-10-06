@@ -2,6 +2,13 @@
 
 All notable changes to this project are recorded here. Versions use one digit after the decimal point (… v1.8, v1.9, v2.0).
 
+## [v2.0] — 2026-10-06
+### Changed
+- **Settings page hidden** from the navigation menu; the connection is pinned in `CONFIG.API_URL`, so team members no longer see or change it.
+- Administrators can still open Settings by adding `#settings` to the page address (e.g. `…/index.html#settings`).
+- Demo-mode banner no longer links to Settings.
+- Consolidated release of v1.0 – v1.9 (names list, sectors NOC/SOC/DSSC/AAU/ITOC/ICTD, Google Sheets link, logos, mobile/extension, one-line bold labels, «أخرى» free-text).
+
 ## [v1.9] — 2026-10-06
 ### Added
 - Choosing **«أخرى · Other»** in Category or Source opens a required text field to specify it (hidden and cleared otherwise).

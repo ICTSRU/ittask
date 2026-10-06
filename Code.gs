@@ -1,6 +1,6 @@
 /**
  * IT Task List Management — Google Apps Script backend
- * Version: v1.9
+ * Version: v2.0
  * Sulaiman Al Rajhi University · ICTD · IT Operations Center (ITOC)
  *
  * Setup (see README.md for screenshots-free step list):
@@ -23,7 +23,7 @@ const SHEET_AUDIT = 'Audit';
 const TASK_HEADERS = ['TaskID','Title','Description','Sector','Category','Priority','Source','TicketRef',
   'AssignedTo','AssignedBy','StartDate','DueDate','Status','Progress','CompletedDate','Reviewer',
   'ReviewDate','ReviewResult','ReviewNotes','UpdateLog','CreatedAt','UpdatedAt','CreatedBy',
-  'CategoryOther','SourceOther'];  // v1.9: free-text when «أخرى» is selected
+  'CategoryOther','SourceOther'];  // v2.0: free-text when «أخرى» is selected
 const TEAM_HEADERS = ['MemberID','Name','Role','Sector','Email','Active','Mobile','Extension'];
 const AUDIT_HEADERS = ['Timestamp','Action','RecordID','Summary'];
 // Official ICTD names list — seeded into the Team sheet by setup() (add role & email there or in the app)
@@ -64,7 +64,7 @@ function ensureSheet_(ss, name, headers) {
       .setFontWeight('bold').setBackground('#501e8c').setFontColor('#ffffff');
     sh.setFrozenRows(1);
   } else {
-    // upgrade: add any new columns (e.g. Mobile, Extension in v1.9) at the end of the header row
+    // upgrade: add any new columns (e.g. Mobile, Extension in v2.0) at the end of the header row
     headers.forEach(function (h, i) {
       if (String(first[i] || '') === '') {
         sh.getRange(1, i + 1).setValue(h).setFontWeight('bold').setBackground('#501e8c').setFontColor('#ffffff');
@@ -80,7 +80,7 @@ function doGet(e) {
   try {
     checkKey_(p.key);
     const action = p.action || 'list';
-    if (action === 'ping') return json_({ ok: true, version: 'v1.9', time: new Date().toISOString() });
+    if (action === 'ping') return json_({ ok: true, version: 'v2.0', time: new Date().toISOString() });
     if (action === 'list') return json_({ ok: true, tasks: readAll_(SHEET_TASKS, TASK_HEADERS), team: readAll_(SHEET_TEAM, TEAM_HEADERS) });
     if (action === 'get') {
       const t = readAll_(SHEET_TASKS, TASK_HEADERS).filter(function (r) { return r.TaskID === p.id; })[0];
