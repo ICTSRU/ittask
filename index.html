@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="version" content="3.0">
+<meta name="version" content="3.1">
 <title>IT Task List Management | إدارة مهام تقنية المعلومات</title>
-<link rel="icon" type="image/png" href="assets/itoc-logo.png">
+<link rel="icon" type="image/png" href="https://ictsru.github.io/brand/logos/itoc-logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -15,8 +15,8 @@
     WEB_APP_URL: "https://script.google.com/macros/s/AKfycbxRA9He5zQE5--S7RueMEbR7S1kIVyz1nFZCIcf_-vQoRXY9DszeqPtLv95VwRhKenV/exec",
     TITLE:       "إدارة مهام تقنية المعلومات",
     SUBTITLE:    "تسجيل المهام وإسنادها ومتابعتها ومراجعتها — متاح لفريق ICTD بحساب الجامعة",
-    LOGO:        "assets/itoc-logo.png",
-    VERSION:     "3.0",
+    LOGO:        "https://ictsru.github.io/brand/logos/itoc-logo.png",   // shared Brand Kit (falls back to assets/)
+    VERSION:     "3.1",
     KEY:         "ictd_tasks"
   };
   /* ▲▲▲ CONFIG ▲▲▲ */
@@ -40,11 +40,6 @@ html,body{height:100%}
 body{margin:0;display:flex;flex-direction:column;min-height:100vh;background:var(--bg);color:var(--ink);font-family:"Cairo",Tahoma,Arial,sans-serif;line-height:1.6}
 .container{max-width:1100px;margin:0 auto;padding:0 16px;width:100%}
 
-/* Official header band: SRU right, ICTD left */
-.band{background:#fff;border-bottom:1px solid var(--border)}
-.band .container{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:10px;padding-bottom:10px}
-.band img{display:block;height:54px;width:auto;max-width:44vw;object-fit:contain}
-.band .ictd{height:60px}
 .bar{height:6px;background:linear-gradient(90deg,var(--purple-dark),var(--purple) 60%,var(--blue))}
 
 main{flex:1;display:grid;place-items:center;padding:32px 16px}
@@ -72,31 +67,33 @@ h1{margin:6px 0 4px;font-size:1.45rem;color:var(--purple-dark);line-height:1.35}
 
 .en{margin-top:16px;padding-top:12px;border-top:1px solid var(--border);direction:ltr;font-size:.8rem;color:#8a7c9c;font-family:Arial,sans-serif}
 
-footer{background:var(--purple-dark);color:#e6dcf5;font-size:.82rem}
-footer .container{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:space-between;padding-top:12px;padding-bottom:12px}
 footer .ver{font-family:Arial,sans-serif;background:rgba(255,255,255,.12);padding:0 8px;border-radius:3px}
 
 @media (max-width:520px){
-  .band img{height:38px}.band .ictd{height:44px}
   .card{padding:22px 18px 18px}
   .card .logo{height:62px}
   h1{font-size:1.25rem}
 }
+/* Fallback only — used if the Brand site is unreachable; the Brand Kit (linked after this block) overrides it */
+.sru-brandbar{background:#fff;border-bottom:1px solid rgba(80,30,140,.12)}.sru-brandbar .in{max-width:1100px;margin:0 auto;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:16px}.sru-brandbar img{display:block;height:40px;width:auto;max-width:46%}
+.sru-footer{background:#3a1464;color:#fff}.sru-footer .in{max-width:1100px;margin:0 auto;padding:16px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}.sru-support{direction:ltr;background:#fff;color:#3a1464;border-radius:4px;padding:8px 16px}.sru-support a{color:#501e8c;font-weight:800}.sru-itoc{display:flex;align-items:center;background:#fff;border-radius:4px;padding:3px 9px;line-height:0}.sru-itoc img{height:32px;width:auto}
+.sru-footer .ftr-note{flex:1 1 220px;min-width:0;text-align:center;font-size:.8rem;line-height:1.6;color:#e6dcf5;align-self:center}
 </style>
+<!-- SRU Brand Kit (shared): tech background, brand bar, footer, logos -->
+<link rel="stylesheet" href="https://ictsru.github.io/brand/css/sru-shell.css">
+<link rel="stylesheet" href="https://ictsru.github.io/brand/css/sru-tech-bg.css">
 </head>
 <body>
 
-<div class="band">
-  <div class="container">
-    <img src="assets/sru-logo.png" alt="جامعة سليمان الراجحي | Sulaiman Alrajhi University">
-    <img class="ictd" src="assets/ictd-logo.png" alt="الإدارة التنفيذية للاتصالات وتقنية المعلومات">
-  </div>
-</div>
-<div class="bar"></div>
+<div class="sru-brandbar"><div class="in">
+  <img src="https://ictsru.github.io/brand/logos/sru-logo.png" alt="جامعة سليمان الراجحي | Sulaiman Alrajhi University" onerror="this.onerror=null;this.src='assets/sru-logo.png'">
+  <img src="https://ictsru.github.io/brand/logos/ictd-logo.png" alt="الإدارة التنفيذية للاتصالات وتقنية المعلومات" onerror="this.onerror=null;this.src='assets/ictd-logo.png'">
+</div></div>
+<div class="bar sru-tech-bg"></div>
 
 <main>
   <div class="card">
-    <img class="logo" id="appLogo" src="assets/itoc-logo.png" alt="">
+    <img class="logo" id="appLogo" src="https://ictsru.github.io/brand/logos/itoc-logo.png" alt="ITOC" onerror="this.onerror=null;this.src='assets/itoc-logo.png'">
     <h1 id="appTitle"></h1>
     <p class="sub" id="appSub"></p>
 
@@ -124,12 +121,11 @@ footer .ver{font-family:Arial,sans-serif;background:rgba(255,255,255,.12);paddin
   </div>
 </main>
 
-<footer>
-  <div class="container">
-    <div>مركز العمليات التقنية <b dir="ltr">ITOC</b> — الإدارة التنفيذية للاتصالات وتقنية المعلومات — جامعة سليمان الراجحي © 2026</div>
-    <div>الإصدار <span class="ver" dir="ltr" id="appVer"></span></div>
-  </div>
-</footer>
+<footer class="sru-footer sru-tech-bg-dark"><div class="in">
+  <div class="sru-support"><b>For Support:</b> Dial <span class="star" aria-label="star">*</span> <span class="or">or</span> Send email to: <a href="mailto:servicedesk@sr.edu.sa">servicedesk@sr.edu.sa</a></div>
+  <div class="ftr-note">ITOC — الإدارة التنفيذية للاتصالات وتقنية المعلومات — جامعة سليمان الراجحي © 2026 · الإصدار <span class="ver" dir="ltr" id="appVer"></span></div>
+  <a class="sru-itoc" href="https://ictsru.github.io/ITOC/#forms" target="_blank" rel="noopener" title="ITOC — IT Operations Center"><img src="https://ictsru.github.io/brand/logos/itoc-logo.png" alt="ITOC — IT Operations Center" onerror="this.onerror=null;this.src='assets/itoc-logo.png'"></a>
+</div></footer>
 
 <script>
   var go = document.getElementById("go"), skip = document.getElementById("skip");
