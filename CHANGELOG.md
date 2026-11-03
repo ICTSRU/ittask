@@ -7,6 +7,7 @@ All notable changes to this project are recorded here. Versions use one digit af
 - **Automatic Apps Script update from GitHub** (same mechanism as the SOP platform): `.github/workflows/deploy-apps-script.yml` (clasp 2.4.2) pushes `apps-script/` to the project bound to the Task Register Sheet and moves the existing web-app deployment to a new version on every change — same /exec URL. Guide: `AUTODEPLOY.md`.
 - Server files now live in the repo under `apps-script/` (`Code.gs`, `Index.html`, `Logos.html`, `Denied.html`).
 - The workflow defaults to this platform's live deployment ID, so only two secrets are needed: `CLASPRC_JSON`, `SCRIPT_ID`.
+- **Safety check (autodeploy v1.5):** before pushing any file, the workflow confirms that the project behind `SCRIPT_ID` owns this platform's web-app deployment; otherwise it stops with «SCRIPT_ID points to a different Apps Script project» and pushes nothing.
 ### Changed
 - Repository layout matches the platform repo: sign-in page at the root (`index.html`, `assets/`), server code in `apps-script/`.
 - `DEFAULT_ALLOWED` in `Code.gs` is empty (the repo is public); the access list lives only in the `AllowedUsers` tab.
