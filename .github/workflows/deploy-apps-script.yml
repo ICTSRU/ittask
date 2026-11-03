@@ -2,6 +2,7 @@
 # Every push that changes apps-script/** (or a manual "Run workflow") pushes the files to the Apps Script
 # project and moves the EXISTING web-app deployment to a new version — the /exec URL stays the same.
 # Secrets (Settings ▸ Secrets and variables ▸ Actions): CLASPRC_JSON · SCRIPT_ID   (DEPLOYMENT_ID optional — see below)
+# SCRIPT_ID is per platform: copy it from the Task Register Sheet ▸ Extensions ▸ Apps Script ▸ Project Settings (never SOP's).
 name: Deploy Apps Script
 
 on:
