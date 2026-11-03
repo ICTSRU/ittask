@@ -1,4 +1,4 @@
-# IT Task List Management — automatic Apps Script update · autodeploy v1.4 (same as SOP autodeploy v1.3 + default deployment)
+# IT Task List Management — automatic Apps Script update · autodeploy v1.5 (SOP autodeploy v1.3 + default deployment + target-project check)
 # Every push that changes apps-script/** (or a manual "Run workflow") pushes the files to the Apps Script
 # project and moves the EXISTING web-app deployment to a new version — the /exec URL stays the same.
 # Secrets (Settings ▸ Secrets and variables ▸ Actions): CLASPRC_JSON · SCRIPT_ID   (DEPLOYMENT_ID optional — see below)
@@ -46,6 +46,15 @@ jobs:
           mkdir -p /tmp/live && cd /tmp/live
           printf '{"scriptId":"%s"}' "$SCRIPT_ID" > .clasp.json
           clasp pull
+          # Safety: the target project must own THIS platform's web app — otherwise SCRIPT_ID points to another
+          # platform's project (e.g. SOP) and nothing may be pushed.
+          clasp deployments > deployments.txt 2>&1 || true
+          if ! grep -qF "$DEPLOYMENT_ID" deployments.txt; then
+            echo "::error::SCRIPT_ID points to a different Apps Script project (it does not contain deployment ${DEPLOYMENT_ID:0:12}…). Nothing was pushed. Copy the Script ID from the Task Register Sheet: Extensions > Apps Script > Project Settings."
+            echo "Files in that project:"; ls -1
+            exit 1
+          fi
+          echo "Target project verified: it owns deployment ${DEPLOYMENT_ID:0:12}…"
           cp appsscript.json "$GITHUB_WORKSPACE/apps-script/appsscript.json"
 
       - name: Push files (Code, Index, Logos, Denied)
