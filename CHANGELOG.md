@@ -2,6 +2,54 @@
 
 All notable changes to this project are recorded here. Versions use one digit after the decimal point (… v1.8, v1.9, v2.0).
 
+## [v3.3] — 2026-11-03
+### Added
+- **Automatic Apps Script update from GitHub** (same mechanism as the SOP platform): `.github/workflows/deploy-apps-script.yml` (clasp 2.4.2) pushes `apps-script/` to the project bound to the Task Register Sheet and moves the existing web-app deployment to a new version on every change — same /exec URL. Guide: `AUTODEPLOY.md`.
+- Server files now live in the repo under `apps-script/` (`Code.gs`, `Index.html`, `Logos.html`, `Denied.html`).
+- The workflow defaults to this platform's live deployment ID, so only two secrets are needed: `CLASPRC_JSON`, `SCRIPT_ID`.
+### Changed
+- Repository layout matches the platform repo: sign-in page at the root (`index.html`, `assets/`), server code in `apps-script/`.
+- `DEFAULT_ALLOWED` in `Code.gs` is empty (the repo is public); the access list lives only in the `AllowedUsers` tab.
+- README: automatic update section; older manual update steps kept for reference.
+
+## [v3.2] — 2026-10-24
+### Changed
+- **GitHub sign-in page (`github-landing/index.html`)** now matches the ICTD Daily Check Report sign-in page exactly: Secure Access Kit layout (logo band, purple→blue line, centred card, plain purple footer with ITOC credit and version).
+- Title «الدخول إلى نظام إدارة المهام» and subtitle «IT Task List Management — متاح لفريق الإدارة التنفيذية للاتصالات وتقنية المعلومات فقط», same pattern as the Daily Check Report.
+### Not changed
+- Apps Script files (`Code.gs`, `Index`, `Denied`, `Logos`) are identical to v3.1 — no redeploy needed. The platform itself keeps the SRU Brand Kit look.
+
+## [v3.1] — 2026-10-24
+Applies the **SRU Brand Kit** (`ictsru.github.io/brand`, live v1.1). All three pages now **link** to the shared Brand files, so a later Brand update reaches this platform without a code change.
+### Changed
+- **App (`Index.html`):** white brand bar `.sru-brandbar` with 40 px SRU (right) / ICTD (left) logos; purple header band uses the **SRU Tech Background · Network** (`.sru-tech-bg`); new footer `.sru-footer .sru-tech-bg-dark` with the «For Support» box (Dial * or servicedesk@sr.edu.sa), copyright/version note and the 32 px ITOC badge linked to the ITOC forms hub.
+- **Access-denied page (`Denied.html`)** and **GitHub sign-in page (`github-landing/index.html`)**: same brand bar, tech-background band and footer.
+- Logos and favicon load from `ictsru.github.io/brand/logos/`.
+- Printing: header band prints with dark text on white (Brand removes the pattern in print); a one-line version note is printed instead of the footer.
+### Added
+- Resilience: if the Brand site can't be reached, logos fall back to the embedded copies (`Logos.html`) or `github-landing/assets/`, and a small built-in style keeps the brand bar and footer laid out in plain purple.
+### Fixed
+- Code comment for the CCCU → DSSC legacy mapping said "v3.0"; corrected to v1.4.
+
+## [v3.0] — 2026-10-23
+Applies **SRU Secure Access Kit v1.4** — the platform is now limited to signed-in Sulaiman Al Rajhi University accounts.
+### Changed (deployment model)
+- The app now runs **inside the Apps Script Web App** (`apps-script/Index.html`), deployed as *Execute as: Me · Who has access: Anyone within Sulaiman Al Rajhi University*. Same Web App URL.
+- GitHub Pages now hosts only the branded **sign-in landing page** (`github-landing/`): no data, no API calls.
+- Data access moved from public `doGet`/`doPost` JSON endpoints to `google.script.run` functions (`apiList`, `apiSaveTask`, `apiDeleteTask`, `apiSaveMember`, `apiDeleteMember`). The old JSON API and `API_KEY` are removed.
+### Added
+- **Access list** `AllowedUsers` (email, name, role, active, notes) seeded with the ICTD team; checked on page load **and on every server call** (`requireSruUser_`). Owner always allowed.
+- **Access log** `AccessLog`: every sign-in with date, time, day (Asia/Riyadh), e-mail, result (دخول / مرفوض / غير مدرج), version; 30-min de-duplication.
+- `Denied.html` page for non-university accounts and accounts not on the list.
+- **Signed-in identity:** the header shows the user's name and e-mail; update-log entries, «أُسندت بواسطة» default and `CreatedBy` use the signed-in account. New column `UpdatedBy` (e-mail, set by the server) and `By` column in `Audit`.
+- Sheet menu: setup, access list, 30-day sign-in summary, purge old logs, daily reminder, show Web App URL.
+- `setup()` now also creates `AllowedUsers` / `AccessLog` and fills blank Team e-mails from the access list (existing values are kept).
+- Reminder e-mails include a link to the platform.
+### Removed
+- Browser-only demo mode and the hidden Settings page (URL / API key / "your name" are no longer needed). JSON backup moved to the Summary page.
+### Fixed
+- Manager daily summary used the old completion rate as «نسبة الإنجاز»; it now reports progress and completion separately (same definitions as the app).
+
 ## [v2.1] — 2026-10-06
 ### Fixed
 - Summary «نسبة الإنجاز» showed 0 % until a task was closed as Completed, ignoring the progress entered in each task. It now reflects actual progress: average Progress % of all non-cancelled tasks (completed = 100 %).
