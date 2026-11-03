@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>إدارة مهام تقنية المعلومات · IT Task List Management</title>
+<meta name="version" content="<?= version ?>">
+<meta name="description" content="Register, assign, track, and review ICTD departmental tasks — Sulaiman Al Rajhi University">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://unpkg.com/lucide@0.453.0/dist/umd/lucide.min.js"></script>
+<style>
+/* ===== SRU identity tokens (SRU_IDENTITY.md) ===== */
+:root{
+  --purple:#501e8c; --purple-dark:#3a1464; --purple-light:#f0ebf8;
+  --blue:#0a6eaa; --blue-light:#e6f3fa;
+  --bg:#f7f5fb; --surface:#ffffff; --ink:#241436; --muted:#6b5a80;
+  --border:rgba(80,30,140,.12); --radius:4px;
+  --ok:#1a7f4b; --ok-bg:#e7f6ee; --warn:#a86400; --warn-bg:#fff4e0;
+  --danger:#b42318; --danger-bg:#fdecea; --grey:#5f6b7a; --grey-bg:#eef0f3;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.6}
+.en{unicode-bidi:isolate;direction:ltr;display:inline-block}
+.muted{color:var(--muted)}
+a{color:var(--blue)}
+.container{max-width:1280px;margin:0 auto;padding:0 16px}
+
+/* ===== Official header band ===== */
+.topbar{background:var(--purple-dark);color:#fff}
+.topbar .container{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;padding-bottom:10px;flex-wrap:wrap}
+.topbar h1{margin:0;font-size:18px;font-weight:700}
+.topbar .sub{font-size:12px;opacity:.85}
+.chips{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ver{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:2px 10px;font-size:12px}
+.conn{display:inline-flex;align-items:center;gap:6px;font-size:12px;border-radius:999px;padding:2px 10px;background:rgba(255,255,255,.12)}
+.conn .dot{width:8px;height:8px;border-radius:50%;background:#f5b400}
+.conn.live .dot{background:#3ddc84}
+.conn.err .dot{background:#ff6b6b}
+.diag{height:4px;background:repeating-linear-gradient(-45deg,var(--blue) 0 10px,#2a8fcb 10px 20px)}
+.navbar{background:var(--purple);position:sticky;top:0;z-index:20}
+.navbar .container{display:flex;gap:2px;overflow-x:auto}
+.navbar button{background:none;border:0;color:#fff;opacity:.8;font:inherit;font-weight:600;padding:12px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;border-bottom:3px solid transparent}
+.navbar button:hover{opacity:1}
+.navbar button.active{opacity:1;border-bottom-color:#fff;background:rgba(255,255,255,.08)}
+.navbar svg{width:16px;height:16px}
+
+/* ===== Layout ===== */
+main{padding:20px 0 40px}
+.view{display:none}
+.view.active{display:block}
+.page-title{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.page-title h2{margin:0;font-size:20px;color:var(--purple-dark)}
+.page-title h2 small{display:block;font-size:12px;font-weight:700;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.card h3{margin:0 0 12px;font-size:15px;font-weight:700;color:var(--purple);display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);padding-bottom:8px}
+.card h3 svg{width:18px;height:18px}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.span2{grid-column:span 2}
+.span-all{grid-column:1/-1}
+@media(max-width:900px){.g3,.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.g2,.g3,.g4{grid-template-columns:1fr}.span2{grid-column:auto}}
+
+/* ===== Form fields ===== */
+label.f{display:flex;flex-direction:column;gap:6px;font-size:13px}
+/* label heading on ONE line: Arabic title + required mark + English title */
+label.f .lh{display:flex;align-items:baseline;gap:4px;white-space:nowrap;min-width:0;font-weight:700;color:var(--ink)}
+label.f .lbl-en{font-weight:700;color:var(--muted);font-size:11.5px;margin-inline-start:auto;overflow:hidden;text-overflow:ellipsis;unicode-bidi:isolate;direction:ltr}
+label.f .req{font-weight:700}
+label.f.other-box[hidden]{display:none}
+label.f.other-box input{border-color:var(--purple);background:var(--purple-light)}
+label.f input:not([type=range]),label.f select{height:40px}
+label.f .req{color:var(--danger)}
+input,select,textarea{font:inherit;color:var(--ink);background:#fff;border:1px solid rgba(80,30,140,.25);border-radius:var(--radius);padding:8px 10px;width:100%}
+input:focus,select:focus,textarea:focus{outline:2px solid rgba(80,30,140,.25);border-color:var(--purple)}
+input[readonly]{background:var(--purple-light)}
+textarea{min-height:80px;resize:vertical}
+.range-row{display:flex;align-items:center;gap:10px}
+.range-row input[type=range]{padding:0;accent-color:var(--purple)}
+.range-row output{min-width:44px;font-weight:700;color:var(--purple)}
+.log{background:var(--bg);border:1px dashed var(--border);border-radius:var(--radius);padding:10px;max-height:180px;overflow:auto;white-space:pre-wrap;font-size:12.5px}
+
+/* ===== Buttons ===== */
+.btn{font:inherit;font-weight:600;border-radius:var(--radius);padding:8px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--purple);background:var(--purple);color:#fff}
+.btn:hover{background:var(--purple-dark)}
+.btn.sec{background:#fff;color:var(--purple)}
+.btn.sec:hover{background:var(--purple-light)}
+.btn.danger{background:#fff;color:var(--danger);border-color:var(--danger)}
+.btn.sm{padding:4px 8px;font-size:12px}
+.btn svg{width:16px;height:16px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.icon-btn{background:none;border:1px solid transparent;border-radius:var(--radius);padding:4px;cursor:pointer;color:var(--purple);display:inline-flex}
+.icon-btn:hover{background:var(--purple-light);border-color:var(--border)}
+.icon-btn.del{color:var(--danger)}
+.icon-btn svg{width:16px;height:16px}
+
+/* ===== Chips ===== */
+.chip{display:inline-block;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.s-new{background:var(--grey-bg);color:var(--grey)}
+.s-assigned{background:var(--blue-light);color:var(--blue)}
+.s-in_progress{background:var(--purple-light);color:var(--purple)}
+.s-on_hold{background:var(--warn-bg);color:var(--warn)}
+.s-under_review{background:#e9e4ff;color:#4b2fb3}
+.s-completed{background:var(--ok-bg);color:var(--ok)}
+.s-cancelled{background:#f1f1f1;color:#888;text-decoration:line-through}
+.p-critical{background:var(--danger);color:#fff}
+.p-high{background:var(--danger-bg);color:var(--danger)}
+.p-medium{background:var(--warn-bg);color:var(--warn)}
+.p-low{background:var(--ok-bg);color:var(--ok)}
+.overdue{color:var(--danger);font-weight:700}
+
+/* ===== Tables ===== */
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);background:#fff}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--purple-light);color:var(--purple-dark);text-align:right;font-weight:700;padding:9px 10px;white-space:nowrap;position:sticky;top:0}
+td{padding:8px 10px;border-top:1px solid var(--border);vertical-align:middle}
+tr:hover td{background:#fbfaff}
+td.id{font-family:Consolas,monospace;font-size:12px;color:var(--muted);direction:ltr;text-align:right}
+.bar{height:6px;background:var(--purple-light);border-radius:3px;min-width:70px;overflow:hidden}
+.bar > i{display:block;height:100%;background:var(--purple)}
+.empty{padding:30px;text-align:center;color:var(--muted)}
+
+/* ===== Filters ===== */
+.filters{display:grid;grid-template-columns:2fr repeat(5,1fr);gap:8px;margin-bottom:12px}
+@media(max-width:900px){.filters{grid-template-columns:repeat(2,1fr)}}
+.seg{display:inline-flex;border:1px solid var(--purple);border-radius:var(--radius);overflow:hidden}
+.seg button{font:inherit;font-weight:600;background:#fff;color:var(--purple);border:0;padding:6px 12px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.seg button.on{background:var(--purple);color:#fff}
+.seg svg{width:15px;height:15px}
+
+/* ===== KPI tiles ===== */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;border-top:3px solid var(--purple)}
+.kpi .k-lbl{font-size:12px;color:var(--muted);font-weight:700}
+.kpi .k-val{font-size:26px;font-weight:800;color:var(--purple-dark);line-height:1.2}
+.kpi .k-sub{font-size:11px;color:var(--muted)}
+.kpi.blue{border-top-color:var(--blue)} .kpi.ok{border-top-color:var(--ok)} .kpi.danger{border-top-color:var(--danger)} .kpi.warn{border-top-color:var(--warn)}
+.kpi.danger .k-val{color:var(--danger)} .kpi.ok .k-val{color:var(--ok)}
+.chart-box{position:relative;height:260px}
+
+/* ===== Board ===== */
+.board{display:grid;grid-template-columns:repeat(7,minmax(200px,1fr));gap:10px;overflow-x:auto;padding-bottom:6px}
+.col{background:#fff;border:1px solid var(--border);border-radius:var(--radius);min-height:200px}
+.col-h{padding:8px 10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:13px}
+.col-b{padding:8px;display:flex;flex-direction:column;gap:8px}
+.tcard{border:1px solid var(--border);border-inline-start:3px solid var(--purple);border-radius:var(--radius);padding:8px;cursor:pointer;background:#fff;font-size:12.5px}
+.tcard:hover{box-shadow:0 2px 8px rgba(80,30,140,.12)}
+.tcard .t{font-weight:700;margin-bottom:4px}
+.tcard .m{display:flex;justify-content:space-between;gap:6px;color:var(--muted);flex-wrap:wrap}
+.tcard.pr-critical{border-inline-start-color:var(--danger)} .tcard.pr-high{border-inline-start-color:#e8590c} .tcard.pr-medium{border-inline-start-color:var(--warn)} .tcard.pr-low{border-inline-start-color:var(--ok)}
+
+/* ===== Banner / toast ===== */
+.banner{display:none;background:var(--warn-bg);color:var(--warn);border:1px solid #f0d3a0;border-radius:var(--radius);padding:8px 12px;margin-bottom:14px;font-size:13px;align-items:center;gap:8px}
+.banner.show{display:flex}
+.banner svg{width:18px;height:18px;flex:none}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--purple-dark);color:#fff;padding:10px 18px;border-radius:var(--radius);box-shadow:0 6px 20px rgba(0,0,0,.2);z-index:100;opacity:0;pointer-events:none;transition:opacity .25s}
+.toast.show{opacity:1}
+.toast.err{background:var(--danger)}
+.loading{position:fixed;inset:0;background:rgba(247,245,251,.7);display:none;align-items:center;justify-content:center;z-index:90;font-weight:700;color:var(--purple)}
+.loading.show{display:flex}
+
+/* ===== Footer ===== */
+/* ===== Footer (SRU Brand Kit: .sru-footer + .sru-tech-bg-dark) ===== */
+.sru-footer{margin-top:20px}
+.sru-footer .ftr-note{flex:1 1 220px;min-width:0;text-align:center;font-size:12px;line-height:1.6;color:#e6dcf5;align-self:center}
+.sru-footer .ftr-note .en{font-weight:700}
+
+/* ===== Summary report ===== */
+.report-head{display:none}
+.print-ver{display:none;text-align:center;font-size:10px;color:var(--muted);margin-top:8px}
+.sum-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:12px}
+.sum-cell{border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;background:var(--bg)}
+.sum-cell b{display:block;font-size:20px;color:var(--purple-dark)}
+.sum-cell span{font-size:12px;color:var(--muted);font-weight:700}
+
+/* ===== Print ===== */
+@media print{
+  @page{size:A4;margin:14mm}
+  body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:11.5px}
+  .no-print,.navbar,.topbar .chips,.toast,.banner{display:none!important}
+  .topbar{color:var(--purple-dark)!important;border-bottom:2px solid var(--purple)}
+  .topbar .sub{opacity:1}
+  .diag{display:none}
+  .print-ver{display:block!important}
+  .view{display:none!important}
+  .view.printing{display:block!important}
+  .card{break-inside:avoid;border-color:#ccc}
+  .report-head{display:block}
+  .table-wrap{border:0}
+  th{position:static}
+}
+/* Fallback only — used if https://ictsru.github.io/brand is unreachable; the Brand Kit (linked after this block) overrides it */
+.sru-brandbar{background:#fff;border-bottom:1px solid rgba(80,30,140,.12)}.sru-brandbar .in{max-width:1100px;margin:0 auto;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:16px}.sru-brandbar img{display:block;height:40px;width:auto;max-width:46%}
+.sru-footer{background:#3a1464;color:#fff}.sru-footer .in{max-width:1100px;margin:0 auto;padding:16px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}.sru-support{direction:ltr;background:#fff;color:#3a1464;border-radius:4px;padding:8px 16px}.sru-support a{color:#501e8c;font-weight:800}.sru-itoc{display:flex;align-items:center;background:#fff;border-radius:4px;padding:3px 9px;line-height:0}.sru-itoc img{height:32px;width:auto}
+</style>
+<!-- SRU Brand Kit (shared): one update there restyles every ICTD/ITOC platform -->
+<link rel="stylesheet" href="https://ictsru.github.io/brand/css/sru-shell.css">
+<link rel="stylesheet" href="https://ictsru.github.io/brand/css/sru-tech-bg.css">
+</head>
+<body>
+
+<!-- ===== Brand bar (SRU Brand Kit): university logo right, ICTD logo left, 40px ===== -->
+<div class="sru-brandbar"><div class="in">
+  <img src="https://ictsru.github.io/brand/logos/sru-logo.png" data-logo="sru" alt="جامعة سليمان الراجحي | Sulaiman Alrajhi University" onerror="(window.__logoFail&amp;&amp;__logoFail(this))||(this.dataset.fail=1)">
+  <img src="https://ictsru.github.io/brand/logos/ictd-logo.png" data-logo="ictd" alt="الإدارة التنفيذية للاتصالات وتقنية المعلومات" onerror="(window.__logoFail&amp;&amp;__logoFail(this))||(this.dataset.fail=1)">
+</div></div>
+
+<div class="topbar sru-tech-bg">
+  <div class="container">
+    <div>
+      <h1>إدارة مهام تقنية المعلومات · <span class="en" style="font-weight:500;opacity:.85">IT Task List Management</span></h1>
+      <div class="sub">تسجيل المهام الإدارية وإسنادها ومتابعتها ومراجعتها · <span class="en">Register, assign, track, and review departmental tasks</span></div>
+    </div>
+    <div class="chips">
+      <span class="conn live" id="connChip" title="مسجّل الدخول بحساب الجامعة"><span class="dot"></span><span id="connText" class="en"><?= userEmail ?></span></span>
+      <span class="ver">الإصدار <span class="en" id="verLabel">v3.3</span></span>
+    </div>
+  </div>
+</div>
+<div class="diag"></div>
+
+<nav class="navbar no-print">
+  <div class="container" id="nav">
+    <button data-view="dashboard" class="active"><i data-lucide="layout-dashboard"></i>لوحة المعلومات</button>
+    <button data-view="tasks"><i data-lucide="list-checks"></i>قائمة المهام</button>
+    <button data-view="register"><i data-lucide="square-pen"></i>تسجيل مهمة</button>
+    <button data-view="summary"><i data-lucide="file-bar-chart"></i>الملخص والتقارير</button>
+    <button data-view="team"><i data-lucide="users"></i>فريق العمل</button>
+  </div>
+</nav>
+
+<main>
+<div class="container">
+
+  <!-- ================= DASHBOARD ================= -->
+  <section class="view active" id="view-dashboard">
+    <div class="page-title">
+      <h2>لوحة المعلومات<small class="en">Dashboard</small></h2>
+      <div class="actions no-print">
+        <select id="dashSector" style="width:auto"></select>
+        <button class="btn sec" id="btnRefresh"><i data-lucide="refresh-cw"></i>تحديث</button>
+      </div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="grid g2">
+      <div class="card"><h3><i data-lucide="pie-chart"></i>المهام حسب الحالة · <span class="en muted">By Status</span></h3><div class="chart-box"><canvas id="chStatus"></canvas></div></div>
+      <div class="card"><h3><i data-lucide="bar-chart-3"></i>المهام حسب القطاع · <span class="en muted">By Sector</span></h3><div class="chart-box"><canvas id="chSector"></canvas></div></div>
+      <div class="card"><h3><i data-lucide="users"></i>عبء العمل لكل عضو · <span class="en muted">Workload per Member</span></h3><div class="chart-box"><canvas id="chWork"></canvas></div></div>
+      <div class="card"><h3><i data-lucide="flag"></i>المهام المفتوحة حسب الأولوية · <span class="en muted">Open by Priority</span></h3><div class="chart-box"><canvas id="chPriority"></canvas></div></div>
+    </div>
+    <div class="grid g2">
+      <div class="card"><h3><i data-lucide="alarm-clock"></i>مهام متأخرة · <span class="en muted">Overdue</span></h3><div class="table-wrap" id="tblOverdue"></div></div>
+      <div class="card"><h3><i data-lucide="calendar-clock"></i>مستحقة خلال 7 أيام · <span class="en muted">Due in 7 days</span></h3><div class="table-wrap" id="tblDueSoon"></div></div>
+    </div>
+  </section>
+
+  <!-- ================= TASK LIST ================= -->
+  <section class="view" id="view-tasks">
+    <div class="page-title">
+      <h2>قائمة المهام<small class="en">Task List</small></h2>
+      <div class="actions no-print">
+        <div class="seg" id="viewMode">
+          <button data-mode="table" class="on"><i data-lucide="table"></i>جدول</button>
+          <button data-mode="board"><i data-lucide="kanban"></i>لوحة</button>
+        </div>
+        <button class="btn sec" id="btnExportCsv"><i data-lucide="download"></i>تصدير Excel/CSV</button>
+        <button class="btn" data-goto="register" data-new="1"><i data-lucide="plus"></i>مهمة جديدة</button>
+      </div>
+    </div>
+    <div class="filters no-print">
+      <input id="fSearch" placeholder="بحث بالرقم أو العنوان أو الوصف… · Search">
+      <select id="fStatus"></select>
+      <select id="fSector"></select>
+      <select id="fPriority"></select>
+      <select id="fAssignee"></select>
+      <select id="fDue">
+        <option value="">كل المواعيد</option>
+        <option value="overdue">المتأخرة فقط · Overdue</option>
+        <option value="week">مستحقة هذا الأسبوع · Due 7d</option>
+        <option value="open">المفتوحة فقط · Open only</option>
+        <option value="review">بانتظار المراجعة · Awaiting review</option>
+      </select>
+    </div>
+    <div class="muted" id="countLine" style="margin-bottom:8px"></div>
+    <div id="taskTable" class="table-wrap"></div>
+    <div id="taskBoard" class="board" style="display:none"></div>
+  </section>
+
+  <!-- ================= REGISTER / EDIT ================= -->
+  <section class="view" id="view-register">
+    <div class="page-title">
+      <h2 id="regTitle">تسجيل مهمة جديدة<small class="en">Register Task</small></h2>
+      <div class="actions no-print">
+        <button class="btn sec" id="btnNew"><i data-lucide="file-plus"></i>نموذج جديد</button>
+      </div>
+    </div>
+    <form id="taskForm" autocomplete="off">
+      <div class="card">
+        <h3><i data-lucide="clipboard-list"></i>1. بيانات المهمة · <span class="en muted">Task Details</span></h3>
+        <div class="grid g4">
+          <label class="f"><span class="lh">رقم المهمة <span class="lbl-en">Task ID</span></span><input name="TaskID" readonly></label>
+          <label class="f span2"><span class="lh">عنوان المهمة <span class="req">*</span><span class="lbl-en">Task Title</span></span><input name="Title" required maxlength="200"></label>
+          <label class="f"><span class="lh">مصدر المهمة <span class="lbl-en">Source</span></span><select name="Source"></select></label>
+          <label class="f other-box" data-for="Source" hidden><span class="lh">حدّد المصدر <span class="req">*</span><span class="lbl-en">Specify source</span></span><input name="SourceOther" maxlength="120" placeholder="اكتب المصدر…"></label>
+          <label class="f"><span class="lh">القطاع <span class="req">*</span><span class="lbl-en">Sector</span></span><select name="Sector" required></select></label>
+          <label class="f"><span class="lh">التصنيف <span class="req">*</span><span class="lbl-en">Category</span></span><select name="Category" required></select></label>
+          <label class="f other-box" data-for="Category" hidden><span class="lh">حدّد التصنيف <span class="req">*</span><span class="lbl-en">Specify category</span></span><input name="CategoryOther" maxlength="120" placeholder="اكتب التصنيف…"></label>
+          <label class="f"><span class="lh">الأولوية <span class="req">*</span><span class="lbl-en">Priority</span></span><select name="Priority" required></select></label>
+          <label class="f"><span class="lh">رقم التذكرة / المرجع <span class="lbl-en">Ticket / Ref No.</span></span><input name="TicketRef" placeholder="SDP-12345"></label>
+          <label class="f span-all"><span class="lh">الوصف والمخرجات المتوقعة <span class="lbl-en">Description &amp; Expected Deliverable</span></span><textarea name="Description"></textarea></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><i data-lucide="user-check"></i>2. الإسناد والجدولة · <span class="en muted">Assignment &amp; Schedule</span></h3>
+        <div class="grid g4">
+          <label class="f"><span class="lh">المُسند إليه <span class="req">*</span><span class="lbl-en">Assigned To</span></span><select name="AssignedTo" required></select></label>
+          <label class="f"><span class="lh">أُسندت بواسطة <span class="lbl-en">Assigned By</span></span><select name="AssignedBy"></select></label>
+          <label class="f"><span class="lh">تاريخ البدء <span class="lbl-en">Start Date</span></span><input type="date" name="StartDate"></label>
+          <label class="f"><span class="lh">تاريخ الاستحقاق <span class="req">*</span><span class="lbl-en">Due Date</span></span><input type="date" name="DueDate" required></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><i data-lucide="activity"></i>3. المتابعة والتقدّم · <span class="en muted">Tracking &amp; Progress</span></h3>
+        <div class="grid g4">
+          <label class="f"><span class="lh">الحالة <span class="req">*</span><span class="lbl-en">Status</span></span><select name="Status" required></select></label>
+          <label class="f span2"><span class="lh">نسبة الإنجاز <span class="lbl-en">Progress %</span></span><div class="range-row"><input type="range" name="Progress" min="0" max="100" step="5" value="0"><output id="progOut">0%</output></div>
+          </label>
+          <label class="f"><span class="lh">تاريخ الإنجاز الفعلي <span class="lbl-en">Completed Date</span></span><input type="date" name="CompletedDate"></label>
+          <label class="f span-all"><span class="lh">إضافة تحديث جديد <span class="lbl-en">Add progress update</span></span><textarea name="NewUpdate" placeholder="مثال: تم إعداد البيئة التجريبية وجارٍ الاختبار…" style="min-height:60px"></textarea></label>
+          <div class="span-all"><div class="muted" style="font-size:12px;font-weight:700;margin-bottom:4px">سجل التحديثات · Update Log</div><div class="log" id="logView">—</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><i data-lucide="shield-check"></i>4. المراجعة والاعتماد · <span class="en muted">Review &amp; Sign-off</span></h3>
+        <div class="grid g4">
+          <label class="f"><span class="lh">المراجِع <span class="lbl-en">Reviewer</span></span><select name="Reviewer"></select></label>
+          <label class="f"><span class="lh">قرار المراجعة <span class="lbl-en">Review Result</span></span><select name="ReviewResult"></select></label>
+          <label class="f"><span class="lh">تاريخ المراجعة <span class="lbl-en">Review Date</span></span><input type="date" name="ReviewDate"></label>
+          <div></div>
+          <label class="f span-all"><span class="lh">ملاحظات المراجعة <span class="lbl-en">Review Notes</span></span><textarea name="ReviewNotes" style="min-height:60px"></textarea></label>
+        </div>
+      </div>
+
+      <div class="actions no-print">
+        <button type="submit" class="btn" id="btnSave"><i data-lucide="save"></i>حفظ المهمة</button>
+        <button type="button" class="btn sec" id="btnPrintTask"><i data-lucide="printer"></i>طباعة / PDF</button>
+        <button type="button" class="btn danger" id="btnDelete" style="display:none"><i data-lucide="trash-2"></i>حذف</button>
+        <span class="muted" id="metaLine" style="align-self:center;font-size:12px"></span>
+      </div>
+    </form>
+  </section>
+
+  <!-- ================= SUMMARY ================= -->
+  <section class="view" id="view-summary">
+    <div class="report-head card">
+      <b>تقرير ملخص المهام · Task Summary Report</b> — <span id="rpMeta"></span>
+    </div>
+    <div class="page-title">
+      <h2>الملخص والتقارير<small class="en">Summary &amp; Reports</small></h2>
+      <div class="actions no-print">
+        <button class="btn sec" id="btnSumCsv"><i data-lucide="download"></i>تصدير</button>
+        <button class="btn sec" id="btnBackup" title="نسخة احتياطية JSON"><i data-lucide="file-json"></i>نسخة احتياطية</button>
+        <button class="btn" id="btnPrintSum"><i data-lucide="printer"></i>طباعة التقرير / PDF</button>
+      </div>
+    </div>
+    <div class="card no-print">
+      <div class="grid g4">
+        <label class="f"><span class="lh">من تاريخ <span class="lbl-en">From (Due date)</span></span><input type="date" id="sFrom"></label>
+        <label class="f"><span class="lh">إلى تاريخ <span class="lbl-en">To (Due date)</span></span><input type="date" id="sTo"></label>
+        <label class="f"><span class="lh">القطاع <span class="lbl-en">Sector</span></span><select id="sSector"></select></label>
+        <label class="f"><span class="lh">فترة سريعة <span class="lbl-en">Quick period</span></span><select id="sQuick">
+            <option value="">— مخصص · Custom —</option>
+            <option value="week">هذا الأسبوع · This week</option>
+            <option value="month">هذا الشهر · This month</option>
+            <option value="quarter">هذا الربع · This quarter</option>
+            <option value="year">هذا العام · This year</option>
+            <option value="all">الكل · All</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <div class="card"><h3><i data-lucide="sigma"></i>المؤشرات العامة · <span class="en muted">Headline Figures</span></h3><div class="sum-grid" id="sumHead"></div></div>
+    <div class="card"><h3><i data-lucide="user-round"></i>الأداء حسب عضو الفريق · <span class="en muted">Performance by Member</span></h3><div class="table-wrap" id="sumMember"></div></div>
+    <div class="card"><h3><i data-lucide="network"></i>الأداء حسب القطاع · <span class="en muted">Performance by Sector</span></h3><div class="table-wrap" id="sumSector"></div></div>
+    <div class="card"><h3><i data-lucide="triangle-alert"></i>المهام المتأخرة والمعلّقة · <span class="en muted">Overdue &amp; On-hold</span></h3><div class="table-wrap" id="sumRisk"></div></div>
+  </section>
+
+  <!-- ================= TEAM ================= -->
+  <section class="view" id="view-team">
+    <div class="page-title"><h2>فريق العمل<small class="en">Team Members</small></h2></div>
+    <div class="card no-print">
+      <h3><i data-lucide="user-plus"></i>إضافة / تعديل عضو · <span class="en muted">Add / Edit Member</span></h3>
+      <form id="memberForm" class="grid g4" autocomplete="off">
+        <input type="hidden" name="MemberID">
+        <label class="f"><span class="lh">الاسم <span class="req">*</span><span class="lbl-en">Name</span></span><select name="Name" required></select></label>
+        <label class="f"><span class="lh">المسمى / الدور <span class="lbl-en">Role</span></span><input name="Role" placeholder="Network Engineer"></label>
+        <label class="f"><span class="lh">القطاع <span class="lbl-en">Sector</span></span><select name="Sector"></select></label>
+        <label class="f"><span class="lh">البريد الإلكتروني <span class="lbl-en">Email (for reminders)</span></span><input type="email" name="Email" placeholder="name@sr.edu.sa" dir="ltr"></label>
+        <label class="f"><span class="lh">رقم الجوال <span class="lbl-en">Mobile</span></span><input type="tel" name="Mobile" placeholder="05XXXXXXXX" dir="ltr" inputmode="tel" pattern="^(\+9665|05)[0-9]{8}$" title="05XXXXXXXX أو +9665XXXXXXXX"></label>
+        <label class="f"><span class="lh">الرقم الداخلي <span class="lbl-en">Extension</span></span><input type="text" name="Extension" placeholder="1234" dir="ltr" inputmode="numeric" pattern="^[0-9]{2,6}$" title="أرقام فقط (2–6)"></label>
+        <label class="f"><span class="lh">نشط <span class="lbl-en">Active</span></span><select name="Active"><option value="Yes">نعم · Yes</option><option value="No">لا · No</option></select></label>
+        <div class="actions span-all"><button class="btn" type="submit"><i data-lucide="save"></i>حفظ العضو</button><button class="btn sec" type="reset" id="btnMemReset">مسح</button></div>
+      </form>
+    </div>
+    <div class="table-wrap" id="teamTable"></div>
+  </section>
+
+</div>
+</main>
+
+<footer class="sru-footer sru-tech-bg-dark"><div class="in">
+  <div class="sru-support"><b>For Support:</b> Dial <span class="star" aria-label="star">*</span> <span class="or">or</span> Send email to: <a href="mailto:servicedesk@sr.edu.sa">servicedesk@sr.edu.sa</a></div>
+  <div class="ftr-note">© جامعة سليمان الراجحي — الإدارة التنفيذية للاتصالات وتقنية المعلومات · نظام إدارة المهام <span class="en">v3.3</span></div>
+  <a class="sru-itoc" href="https://ictsru.github.io/ITOC/#forms" target="_blank" rel="noopener" title="ITOC — IT Operations Center"><img src="https://ictsru.github.io/brand/logos/itoc-logo.png" data-logo="itoc" alt="ITOC — IT Operations Center" onerror="(window.__logoFail&amp;&amp;__logoFail(this))||(this.dataset.fail=1)"></a>
+</div></footer>
+
+<div class="print-ver">نظام إدارة مهام تقنية المعلومات · <span class="en">v3.3</span> · ITOC — جامعة سليمان الراجحي</div>
+<div class="toast" id="toast"></div>
+<div class="loading" id="loading">جارٍ التحميل… · Loading…</div>
+
+<?!= include('Logos') ?>
+<script>
+/* =====================================================================
+   IT Task List Management — v3.3  (runs inside the Apps Script Web App)
+   Access: @sr.edu.sa accounts on the AllowedUsers list (SRU Secure Access Kit v1.4).
+   Look:   SRU Brand Kit, linked from https://ictsru.github.io/brand (tech background, brand bar, footer, logos).
+   Data arrives with the page (BOOT); every change goes through google.script.run,
+   and the server re-checks the signed-in account on every call.
+   ===================================================================== */
+const CONFIG = { VERSION: 'v3.3' };
+const BOOT = <?!= dataJson ?>;
+const ME = (BOOT && BOOT.me) || { email: '', name: '', role: 'user' };
+
+/* ---------- Reference lists (stored as codes, shown bilingual) ---------- */
+const STATUS = {
+  new:['جديدة','New'], assigned:['مُسندة','Assigned'], in_progress:['قيد التنفيذ','In Progress'],
+  on_hold:['معلّقة','On Hold'], under_review:['قيد المراجعة','Under Review'],
+  completed:['مكتملة','Completed'], cancelled:['ملغاة','Cancelled']
+};
+const STATUS_COLORS = {new:'#8a94a3',assigned:'#0a6eaa',in_progress:'#501e8c',on_hold:'#d08a00',under_review:'#6c4ad6',completed:'#1a7f4b',cancelled:'#bdbdbd'};
+const PRIORITY = {critical:['حرجة','Critical'], high:['عالية','High'], medium:['متوسطة','Medium'], low:['منخفضة','Low']};
+const PRIORITY_COLORS = {critical:'#b42318',high:'#e8590c',medium:'#d08a00',low:'#1a7f4b'};
+const SECTORS = {NOC:['NOC','Network Operations Center'], SOC:['SOC','Security Operations Center'], DSSC:['DSSC','DSSC'], AAU:['AAU','AAU'], ITOC:['ITOC','ITOC'], ICTD:['ICTD','ICTD']}; // edit labels to match the official unit names
+const CATEGORIES = {
+  infrastructure:['البنية التحتية والخوادم','Infrastructure'], network:['الشبكات والاتصالات','Network'],
+  cybersecurity:['الأمن السيبراني','Cybersecurity'], applications:['التطبيقات والأنظمة','Applications'],
+  erp:['نظام ERP (Oracle Fusion)','ERP / Oracle Fusion'], cloud:['الحوسبة السحابية','Cloud'],
+  support:['الدعم الفني للمستخدمين','User Support'], project:['مشروع','Project'],
+  admin:['إداري / تقارير','Administrative'], other:['أخرى','Other']
+};
+const SOURCES = {directive:['توجيه إداري','Management directive'], ticket:['تذكرة مكتب الخدمة','Service Desk ticket'], meeting:['مخرجات اجتماع','Meeting action'], email:['بريد إلكتروني','Email request'], plan:['الخطة التشغيلية','Operational plan'], audit:['تدقيق / امتثال','Audit / Compliance'], internal:['مبادرة داخلية','Internal initiative'], other:['أخرى','Other']};
+const REVIEW = {'':['— لم تُراجع —','Not reviewed'], approved:['معتمدة','Approved'], returned:['أُعيدت للتعديل','Returned for rework'], rejected:['مرفوضة','Rejected']};
+
+/* Official ICTD names list — used in EVERY name dropdown (assignee, assigned by, reviewer, filters, team).
+   Edit here to add/remove people; order is kept as shown. */
+const TEAM_NAMES = [
+  'Dr. Nasser Abounar','Mohamed ElMahdy','Mohamed Nawaz','Mohamed Omar','Mohamed Saleh',
+  'Ammar Alrowedan','Nayed Alrashidi','Abd Alazez Alawaji','Azzam Alaqeel','Asma Alolayan',
+  'Shath Albusyli','Inshrah Almutairi','عاطف النادي','سراج'
+];
+const NAME_PLACEHOLDER = 'اختر الاسم';
+
+const TASK_FIELDS = ['TaskID','Title','Description','Sector','Category','Priority','Source','TicketRef','AssignedTo','AssignedBy','StartDate','DueDate','Status','Progress','CompletedDate','Reviewer','ReviewDate','ReviewResult','ReviewNotes','UpdateLog','CreatedAt','UpdatedAt','CreatedBy','CategoryOther','SourceOther','UpdatedBy'];
+
+/* ---------- State ---------- */
+const state = { tasks:[], team:[], mode:'live', viewMode:'table', charts:{} };
+/* ---------- Helpers ---------- */
+const $ = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const lbl = (map,k,both=false)=> map[k] ? (both && map[k][0]!==map[k][1] ? `${map[k][0]} · ${map[k][1]}` : map[k][0]) : (k||'—');
+const pad = n => String(n).padStart(2,'0');
+const todayISO = ()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;};
+const addDays = (iso,n)=>{const d=new Date(iso+'T00:00:00');d.setDate(d.getDate()+n);return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;};
+const nowStamp = ()=>{const d=new Date();return `${todayISO()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;};
+const withOther = (map,k,txt,both)=> (k==='other' && txt) ? `${both?'أخرى · Other':'أخرى'}: ${txt}` : lbl(map,k,both);
+const catLabel = (t,both)=> withOther(CATEGORIES,t.Category,t.CategoryOther,both);
+const srcLabel = (t,both)=> withOther(SOURCES,t.Source,t.SourceOther,both);
+function syncOther(clear){
+  $$('#taskForm .other-box').forEach(box=>{
+    const sel=$('#taskForm')[box.dataset.for], inp=box.querySelector('input'), on=sel.value==='other';
+    box.hidden=!on; inp.required=on;
+    if(!on && clear!==false) inp.value='';
+    if(on && clear===true) inp.focus();
+  });
+}
+const pct = v => v==null ? '—' : v+'%';
+const isOpen = t => !['completed','cancelled'].includes(t.Status);
+const isOverdue = t => isOpen(t) && t.DueDate && t.DueDate < todayISO();
+const onTime = t => t.Status==='completed' && t.DueDate && (t.CompletedDate||t.DueDate) <= t.DueDate;
+const fmtDate = iso => iso ? iso : '—';
+const daysLate = t => Math.round((new Date(todayISO()) - new Date(t.DueDate))/86400000);
+function genId(){const d=new Date();return `TSK-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${Math.random().toString(36).slice(2,5).toUpperCase()}`;}
+function toast(msg,err){const t=$('#toast');t.textContent=msg;t.className='toast show'+(err?' err':'');clearTimeout(t._h);t._h=setTimeout(()=>t.className='toast',3200);}
+function busy(on){$('#loading').classList.toggle('show',!!on);}
+function icons(){ if(window.lucide) lucide.createIcons(); }
+function fillSelect(sel,map,{all,allLabel,blank}={}){
+  let h='';
+  if(all) h+=`<option value="">${allLabel||'الكل · All'}</option>`;
+  if(blank) h+=`<option value="">${blank===true?'— اختر · Select —':esc(blank)}</option>`;
+  for(const [k,v] of Object.entries(map)) h+=`<option value="${esc(k)}">${esc(Array.isArray(v)?(v[0]===v[1]?v[0]:`${v[0]} · ${v[1]}`):v)}</option>`;
+  sel.innerHTML=h;
+}
+function userName(){ return ME.name || ''; }
+
+/* ---------- Data layer: google.script.run (server checks access on every call) ---------- */
+function gsRun(fn, ...args){
+  return new Promise((resolve, reject)=>{
+    google.script.run
+      .withSuccessHandler(resolve)
+      .withFailureHandler(e=>reject(e instanceof Error ? e : new Error(String((e && e.message) || e))))[fn](...args);
+  });
+}
+const api = {
+  async load(){ return gsRun('apiList'); },
+  async post(action, payload){
+    const calls = {
+      saveTask:     ()=>gsRun('apiSaveTask', payload.task),
+      deleteTask:   ()=>gsRun('apiDeleteTask', payload.id),
+      saveMember:   ()=>gsRun('apiSaveMember', payload.member),
+      deleteMember: ()=>gsRun('apiDeleteMember', payload.id)
+    };
+    if(!calls[action]) throw new Error('Unknown action');
+    const j = await calls[action]();
+    if(!j || !j.ok) throw new Error((j && j.error) || 'Request failed');
+    return j;
+  }
+};
+
+function applyData(d){
+  state.tasks = (d.tasks||[]).map(normalizeTask);
+  state.team = d.team||[];
+  if(d.me){ ME.email=d.me.email; ME.name=d.me.name; ME.role=d.me.role; }
+}
+async function reload(silent){
+  if(!silent) busy(true);
+  try{
+    applyData(await api.load());
+    setConn('live');
+  }catch(e){
+    console.error(e); setConn('err'); toast('تعذّر تحميل البيانات: '+e.message, true);
+  }finally{ busy(false); }
+  refreshPeople(); renderAll();
+}
+function normalizeTask(t){
+  const o={}; TASK_FIELDS.forEach(f=>o[f]= t[f]==null?'':String(t[f]));
+  if(o.Sector==='Operation') o.Sector='ITOC'; // legacy sector code (renamed in v1.2)
+  if(o.Sector==='CCCU') o.Sector='DSSC';     // legacy sector code (renamed in v1.4)
+  o.Progress = Math.max(0,Math.min(100,parseInt(o.Progress||'0',10)||0));
+  return o;
+}
+function setConn(s){
+  const c=$('#connChip'); c.className='conn'+(s==='live'?' live':s==='err'?' err':'');
+  $('#connText').textContent = s==='err' ? 'خطأ في الاتصال' : (ME.name && ME.name!==ME.email ? `${ME.name} · ${ME.email}` : ME.email);
+}
+
+/* ---------- People (team) helpers ---------- */
+function activeMembers(){ return state.team.filter(m=>(m.Active||'Yes')!=='No'); }
+function nameOptions(extra=[]){
+  const names={}; TEAM_NAMES.forEach(n=>names[n]=n);
+  // keep historic names already stored in records so old tasks still display
+  extra.forEach(n=>{ if(n && !names[n]) names[n]=n; });
+  return names;
+}
+function refreshPeople(){
+  const used=[]; state.tasks.forEach(t=>used.push(t.AssignedTo,t.AssignedBy,t.Reviewer));
+  const names=nameOptions(used);
+  const f=$('#taskForm');
+  ['AssignedTo','AssignedBy','Reviewer'].forEach(n=>{ const cur=f[n].value; fillSelect(f[n],names,{blank:NAME_PLACEHOLDER}); f[n].value=cur; });
+  const cur=$('#fAssignee').value; fillSelect($('#fAssignee'),names,{all:true,allLabel:'كل الأعضاء'}); $('#fAssignee').value=cur;
+  const mf=$('#memberForm'); const mc=mf.Name.value; fillSelect(mf.Name,nameOptions(),{blank:NAME_PLACEHOLDER}); mf.Name.value=mc;
+}
+
+/* ---------- Navigation ---------- */
+function go(view){
+  $$('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));
+  $$('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
+  if(view==='dashboard') renderDashboard();
+  if(view==='summary') renderSummary();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ---------- Task list ---------- */
+function filteredTasks(){
+  const q=$('#fSearch').value.trim().toLowerCase(), st=$('#fStatus').value, se=$('#fSector').value,
+        pr=$('#fPriority').value, as=$('#fAssignee').value, du=$('#fDue').value, wk=addDays(todayISO(),7);
+  return state.tasks.filter(t=>{
+    if(q && !(`${t.TaskID} ${t.Title} ${t.Description} ${t.TicketRef} ${t.CategoryOther} ${t.SourceOther}`.toLowerCase().includes(q))) return false;
+    if(st && t.Status!==st) return false;
+    if(se && t.Sector!==se) return false;
+    if(pr && t.Priority!==pr) return false;
+    if(as && t.AssignedTo!==as) return false;
+    if(du==='overdue' && !isOverdue(t)) return false;
+    if(du==='week' && !(isOpen(t) && t.DueDate>=todayISO() && t.DueDate<=wk)) return false;
+    if(du==='open' && !isOpen(t)) return false;
+    if(du==='review' && t.Status!=='under_review') return false;
+    return true;
+  }).sort((a,b)=>{
+    const po={critical:0,high:1,medium:2,low:3};
+    return (isOpen(b)-isOpen(a)) || ((a.DueDate||'9999').localeCompare(b.DueDate||'9999')) || ((po[a.Priority]??9)-(po[b.Priority]??9));
+  });
+}
+function renderTasks(){
+  const list=filteredTasks();
+  $('#countLine').textContent = `عدد النتائج: ${list.length} من ${state.tasks.length} · Showing ${list.length} of ${state.tasks.length}`;
+  if(state.viewMode==='board'){ $('#taskTable').style.display='none'; $('#taskBoard').style.display='grid'; renderBoard(list); return; }
+  $('#taskTable').style.display=''; $('#taskBoard').style.display='none';
+  if(!list.length){ $('#taskTable').innerHTML='<div class="empty">لا توجد مهام مطابقة · No matching tasks</div>'; return; }
+  let h=`<table><thead><tr><th>الرقم</th><th>العنوان</th><th>القطاع</th><th>المُسند إليه</th><th>الأولوية</th><th>الاستحقاق</th><th>الحالة</th><th>الإنجاز</th><th>المراجعة</th><th class="no-print"></th></tr></thead><tbody>`;
+  for(const t of list){
+    const od=isOverdue(t);
+    h+=`<tr data-id="${esc(t.TaskID)}">
+      <td class="id">${esc(t.TaskID)}</td>
+      <td><b>${esc(t.Title)}</b><div class="muted" style="font-size:12px">${esc(catLabel(t))}${t.TicketRef?' · '+esc(t.TicketRef):''}</div></td>
+      <td>${esc(t.Sector)}</td>
+      <td>${esc(t.AssignedTo)||'—'}</td>
+      <td><span class="chip p-${esc(t.Priority)}">${esc(lbl(PRIORITY,t.Priority))}</span></td>
+      <td class="${od?'overdue':''}">${fmtDate(t.DueDate)}${od?`<div style="font-size:11px">متأخرة ${daysLate(t)} يوم</div>`:''}</td>
+      <td><select class="quick-status no-print" data-id="${esc(t.TaskID)}" style="padding:3px 6px;font-size:12px;width:auto">${Object.entries(STATUS).map(([k,v])=>`<option value="${k}" ${k===t.Status?'selected':''}>${v[0]}</option>`).join('')}</select></td>
+      <td><div class="bar"><i style="width:${t.Progress}%"></i></div><span style="font-size:11px">${t.Progress}%</span></td>
+      <td>${t.ReviewResult?esc(lbl(REVIEW,t.ReviewResult)):'<span class="muted">—</span>'}</td>
+      <td class="no-print" style="white-space:nowrap"><button class="icon-btn" data-edit="${esc(t.TaskID)}" title="تعديل"><i data-lucide="pencil"></i></button><button class="icon-btn del" data-del="${esc(t.TaskID)}" title="حذف"><i data-lucide="trash-2"></i></button></td>
+    </tr>`;
+  }
+  $('#taskTable').innerHTML=h+'</tbody></table>'; icons();
+}
+function renderBoard(list){
+  let h='';
+  for(const [k,v] of Object.entries(STATUS)){
+    const items=list.filter(t=>t.Status===k);
+    h+=`<div class="col"><div class="col-h" style="border-top:3px solid ${STATUS_COLORS[k]}"><span>${v[0]} <span class="muted en" style="font-weight:500">${v[1]}</span></span><span class="chip s-${k}">${items.length}</span></div><div class="col-b">`;
+    for(const t of items){
+      h+=`<div class="tcard pr-${esc(t.Priority)}" data-edit="${esc(t.TaskID)}"><div class="t">${esc(t.Title)}</div>
+        <div class="m"><span>${esc(t.AssignedTo)||'—'}</span><span class="${isOverdue(t)?'overdue':''}">${fmtDate(t.DueDate)}</span></div>
+        <div class="bar" style="margin-top:6px"><i style="width:${t.Progress}%"></i></div></div>`;
+    }
+    h+='</div></div>';
+  }
+  $('#taskBoard').innerHTML=h;
+}
+
+/* ---------- Register / edit form ---------- */
+function newForm(){
+  const f=$('#taskForm'); f.reset();
+  f.TaskID.value=''; f.Status.value='new'; f.Priority.value='medium'; f.Source.value='directive';
+  f.StartDate.value=todayISO(); f.Progress.value=0; $('#progOut').textContent='0%';
+  if(userName()) { const o=[...f.AssignedBy.options].find(o=>o.value===userName()); if(o) f.AssignedBy.value=userName(); }
+  $('#logView').textContent='—'; $('#metaLine').textContent='سيُولَّد رقم المهمة تلقائياً عند الحفظ · ID auto-generated on save';
+  $('#regTitle').innerHTML='تسجيل مهمة جديدة<small class="en">Register Task</small>';
+  $('#btnDelete').style.display='none'; f.dataset.log='';
+  syncOther();
+}
+function editTask(id){
+  const t=state.tasks.find(x=>x.TaskID===id); if(!t) return;
+  const f=$('#taskForm'); f.reset();
+  TASK_FIELDS.forEach(k=>{ if(f[k]) f[k].value=t[k]??''; });
+  // ensure names not in team still show
+  ['AssignedTo','AssignedBy','Reviewer'].forEach(n=>{ if(t[n] && f[n].value!==t[n]){ f[n].insertAdjacentHTML('beforeend',`<option value="${esc(t[n])}">${esc(t[n])}</option>`); f[n].value=t[n]; }});
+  syncOther(false);
+  $('#progOut').textContent=t.Progress+'%';
+  f.dataset.log=t.UpdateLog||''; $('#logView').textContent=t.UpdateLog||'—';
+  $('#metaLine').textContent=`أُنشئت: ${t.CreatedAt||'—'}${t.CreatedBy?' · '+t.CreatedBy:''} · آخر تحديث: ${t.UpdatedAt||'—'}${t.UpdatedBy?' · '+t.UpdatedBy:''}`;
+  $('#regTitle').innerHTML=`تعديل المهمة <span class="en" style="font-size:14px;color:var(--muted)">${esc(t.TaskID)}</span><small class="en">Edit / Track / Review Task</small>`;
+  $('#btnDelete').style.display='';
+  go('register');
+}
+async function saveTask(e){
+  e.preventDefault();
+  const f=$('#taskForm'); const t={};
+  TASK_FIELDS.forEach(k=>{ if(f[k]) t[k]=f[k].value.trim(); });
+  if(t.Category!=='other') t.CategoryOther=''; if(t.Source!=='other') t.SourceOther='';
+  if(t.StartDate && t.DueDate && t.DueDate < t.StartDate){ toast('تاريخ الاستحقاق قبل تاريخ البدء',true); return; }
+  // business rules
+  if(t.Status==='completed'){ if(!t.CompletedDate) t.CompletedDate=todayISO(); t.Progress='100'; }
+  if(t.Status==='new' && t.AssignedTo) t.Status='assigned';
+  if(t.ReviewResult==='returned' && t.Status==='under_review') t.Status='in_progress';
+  if(t.ReviewResult && !t.ReviewDate) t.ReviewDate=todayISO();
+  // update log
+  let log=f.dataset.log||'';
+  const note=f.NewUpdate.value.trim();
+  const prev=state.tasks.find(x=>x.TaskID===t.TaskID);
+  const who=userName()||t.AssignedBy||'—';
+  const auto=[];
+  if(!prev) auto.push('تم إنشاء المهمة · Created');
+  else{
+    if(prev.Status!==t.Status) auto.push(`الحالة: ${lbl(STATUS,prev.Status)} ← ${lbl(STATUS,t.Status)}`);
+    if(prev.AssignedTo!==t.AssignedTo) auto.push(`إعادة إسناد إلى ${t.AssignedTo}`);
+    if((prev.ReviewResult||'')!==(t.ReviewResult||'') && t.ReviewResult) auto.push(`المراجعة: ${lbl(REVIEW,t.ReviewResult)}`);
+  }
+  if(note) auto.push(note);
+  if(auto.length) log = `[${nowStamp()} · ${who}] ${auto.join(' | ')}` + (log?'\n'+log:'');
+  t.UpdateLog=log;
+  if(!prev) t.CreatedBy=who;
+  busy(true);
+  try{
+    const r=await api.post('saveTask',{task:t});
+    toast(prev?'تم تحديث المهمة ✓':'تم تسجيل المهمة ✓ '+(r.task?.TaskID||''));
+    await reload(true);
+    editTask(r.task?.TaskID||t.TaskID);
+  }catch(err){ toast('فشل الحفظ: '+err.message,true); }
+  finally{ busy(false); }
+}
+async function deleteTask(id){
+  if(!confirm(`حذف المهمة ${id}؟ لا يمكن التراجع.\nDelete task ${id}?`)) return;
+  busy(true);
+  try{ await api.post('deleteTask',{id}); toast('تم الحذف'); await reload(true); go('tasks'); }
+  catch(e){ toast('فشل الحذف: '+e.message,true); } finally{ busy(false); }
+}
+async function quickStatus(id,status){
+  const t=state.tasks.find(x=>x.TaskID===id); if(!t) return;
+  const u={...t,Status:status};
+  if(status==='completed'){ u.Progress='100'; u.CompletedDate=u.CompletedDate||todayISO(); }
+  u.UpdateLog=`[${nowStamp()} · ${userName()||'—'}] الحالة: ${lbl(STATUS,t.Status)} ← ${lbl(STATUS,status)}`+(t.UpdateLog?'\n'+t.UpdateLog:'');
+  busy(true);
+  try{ await api.post('saveTask',{task:u}); toast('تم تحديث الحالة ✓'); await reload(true); }
+  catch(e){ toast('فشل التحديث: '+e.message,true); renderTasks(); } finally{ busy(false); }
+}
+
+/* ---------- Metrics ---------- */
+function metrics(list){
+  const m={total:list.length,open:0,inprog:0,overdue:0,completed:0,review:0,onhold:0,ontime:0,cancelled:0};
+  list.forEach(t=>{
+    if(isOpen(t)) m.open++;
+    if(t.Status==='in_progress') m.inprog++;
+    if(t.Status==='under_review') m.review++;
+    if(t.Status==='on_hold') m.onhold++;
+    if(t.Status==='cancelled') m.cancelled++;
+    if(isOverdue(t)) m.overdue++;
+    if(t.Status==='completed'){ m.completed++; if(onTime(t)) m.ontime++; }
+  });
+  const base=m.total-m.cancelled;
+  m.rate = base? Math.round(m.completed/base*100):0;
+  m.ontimeRate = m.completed? Math.round(m.ontime/m.completed*100):null;   // null = no completed tasks yet
+  // overall progress: average of each task's Progress (completed = 100), excluding cancelled
+  const active=list.filter(t=>t.Status!=='cancelled');
+  m.progress = active.length? Math.round(active.reduce((s,t)=>s+(t.Status==='completed'?100:(+t.Progress||0)),0)/active.length):0;
+  return m;
+}
+
+/* ---------- Dashboard ---------- */
+function drawChart(id,cfg){
+  if(!window.Chart) return;
+  if(state.charts[id]) state.charts[id].destroy();
+  state.charts[id]=new Chart(document.getElementById(id),cfg);
+}
+function renderDashboard(){
+  const sec=$('#dashSector').value;
+  const list=state.tasks.filter(t=>!sec||t.Sector===sec);
+  const m=metrics(list);
+  const tile=(cls,l,en,v,sub)=>`<div class="kpi ${cls}"><div class="k-lbl">${l} · <span class="en">${en}</span></div><div class="k-val">${v}</div><div class="k-sub">${sub||''}</div></div>`;
+  $('#kpis').innerHTML =
+    tile('','إجمالي المهام','Total',m.total,'')+
+    tile('blue','المفتوحة','Open',m.open,`قيد التنفيذ ${m.inprog} · معلّقة ${m.onhold}`)+
+    tile('danger','المتأخرة','Overdue',m.overdue, m.open?`${Math.round(m.overdue/m.open*100)}% من المفتوحة`:'')+
+    tile('warn','بانتظار المراجعة','Under review',m.review,'')+
+    tile('','نسبة الإنجاز','Progress',m.progress+'%','متوسط تقدّم جميع المهام')+
+    tile('ok','المكتملة','Completed',m.completed,`نسبة الإكمال ${m.rate}%`)+
+    tile('ok','الإنجاز في الموعد','On-time',pct(m.ontimeRate),m.completed?`${m.ontime} من ${m.completed}`:'لا توجد مهام مكتملة بعد');
+
+  if(window.Chart){
+    Chart.defaults.font.family="'Cairo',Tahoma,Arial,sans-serif"; Chart.defaults.color='#6b5a80';
+    const sk=Object.keys(STATUS).filter(k=>list.some(t=>t.Status===k));
+    drawChart('chStatus',{type:'doughnut',data:{labels:sk.map(k=>STATUS[k][0]),datasets:[{data:sk.map(k=>list.filter(t=>t.Status===k).length),backgroundColor:sk.map(k=>STATUS_COLORS[k]),borderWidth:2,borderColor:'#fff'}]},options:{maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',rtl:true}}}});
+    const secs=Object.keys(SECTORS);
+    drawChart('chSector',{type:'bar',data:{labels:secs,datasets:[
+      {label:'مفتوحة',data:secs.map(s=>list.filter(t=>t.Sector===s&&isOpen(t)&&!isOverdue(t)).length),backgroundColor:'#501e8c'},
+      {label:'متأخرة',data:secs.map(s=>list.filter(t=>t.Sector===s&&isOverdue(t)).length),backgroundColor:'#b42318'},
+      {label:'مكتملة',data:secs.map(s=>list.filter(t=>t.Sector===s&&t.Status==='completed').length),backgroundColor:'#1a7f4b'}]},
+      options:{maintainAspectRatio:false,scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,ticks:{precision:0}}},plugins:{legend:{rtl:true}}}});
+    const people=[...new Set(list.filter(isOpen).map(t=>t.AssignedTo).filter(Boolean))].sort((a,b)=>list.filter(t=>isOpen(t)&&t.AssignedTo===b).length-list.filter(t=>isOpen(t)&&t.AssignedTo===a).length).slice(0,12);
+    drawChart('chWork',{type:'bar',data:{labels:people,datasets:[
+      {label:'في الموعد',data:people.map(p=>list.filter(t=>t.AssignedTo===p&&isOpen(t)&&!isOverdue(t)).length),backgroundColor:'#0a6eaa'},
+      {label:'متأخرة',data:people.map(p=>list.filter(t=>t.AssignedTo===p&&isOverdue(t)).length),backgroundColor:'#b42318'}]},
+      options:{indexAxis:'y',maintainAspectRatio:false,scales:{x:{stacked:true,beginAtZero:true,ticks:{precision:0}},y:{stacked:true,grid:{display:false}}},plugins:{legend:{rtl:true}}}});
+    const pk=Object.keys(PRIORITY);
+    drawChart('chPriority',{type:'bar',data:{labels:pk.map(k=>PRIORITY[k][0]),datasets:[{label:'مفتوحة',data:pk.map(k=>list.filter(t=>isOpen(t)&&t.Priority===k).length),backgroundColor:pk.map(k=>PRIORITY_COLORS[k])}]},
+      options:{maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{grid:{display:false}}},plugins:{legend:{display:false}}}});
+  }
+  const mini=(rows,cols)=> rows.length? `<table><thead><tr>${cols.map(c=>`<th>${c[0]}</th>`).join('')}</tr></thead><tbody>${rows.map(t=>`<tr data-id="${esc(t.TaskID)}" style="cursor:pointer">${cols.map(c=>`<td>${c[1](t)}</td>`).join('')}</tr>`).join('')}</tbody></table>`:'<div class="empty">لا توجد مهام · None 🎉</div>';
+  const cols=[['المهمة',t=>`<b>${esc(t.Title)}</b>`],['المُسند إليه',t=>esc(t.AssignedTo)||'—'],['الأولوية',t=>`<span class="chip p-${esc(t.Priority)}">${esc(lbl(PRIORITY,t.Priority))}</span>`]];
+  const od=list.filter(isOverdue).sort((a,b)=>a.DueDate.localeCompare(b.DueDate));
+  $('#tblOverdue').innerHTML=mini(od,[...cols,['التأخير',t=>`<span class="overdue">${daysLate(t)} يوم</span>`]]);
+  const wk=addDays(todayISO(),7);
+  const ds=list.filter(t=>isOpen(t)&&t.DueDate>=todayISO()&&t.DueDate<=wk).sort((a,b)=>a.DueDate.localeCompare(b.DueDate));
+  $('#tblDueSoon').innerHTML=mini(ds,[...cols,['الاستحقاق',t=>fmtDate(t.DueDate)]]);
+}
+
+/* ---------- Summary ---------- */
+function periodRange(q){
+  const d=new Date(), y=d.getFullYear(), mo=d.getMonth();
+  const iso=x=>`${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}`;
+  if(q==='week'){ const s=new Date(d); s.setDate(d.getDate()-d.getDay()); const e=new Date(s); e.setDate(s.getDate()+6); return [iso(s),iso(e)]; }
+  if(q==='month') return [iso(new Date(y,mo,1)),iso(new Date(y,mo+1,0))];
+  if(q==='quarter'){ const qs=Math.floor(mo/3)*3; return [iso(new Date(y,qs,1)),iso(new Date(y,qs+3,0))]; }
+  if(q==='year') return [`${y}-01-01`,`${y}-12-31`];
+  return ['',''];
+}
+function summaryList(){
+  const f=$('#sFrom').value, to=$('#sTo').value, se=$('#sSector').value;
+  return state.tasks.filter(t=>(!se||t.Sector===se)&&(!f||t.DueDate>=f)&&(!to||t.DueDate<=to));
+}
+function renderSummary(){
+  const list=summaryList(), m=metrics(list);
+  const cell=(v,l)=>`<div class="sum-cell"><b>${v}</b><span>${l}</span></div>`;
+  $('#sumHead').innerHTML=cell(m.total,'إجمالي · Total')+cell(m.open,'مفتوحة · Open')+cell(m.completed,'مكتملة · Completed')+cell(m.overdue,'متأخرة · Overdue')+cell(m.review,'قيد المراجعة · Review')+cell(m.progress+'%','نسبة الإنجاز · Progress')+cell(m.rate+'%','نسبة الإكمال · Closed')+cell(pct(m.ontimeRate),'في الموعد · On-time');
+  const group=(key,keys)=>{
+    const rows=keys.map(k=>{ const g=list.filter(t=>t[key]===k); return {k,g,m:metrics(g)}; }).filter(r=>r.g.length);
+    if(!rows.length) return '<div class="empty">لا توجد بيانات للفترة المحددة</div>';
+    return `<table><thead><tr><th>${key==='AssignedTo'?'العضو · Member':'القطاع · Sector'}</th><th>الإجمالي</th><th>مفتوحة</th><th>قيد التنفيذ</th><th>متأخرة</th><th>مكتملة</th><th>نسبة الإنجاز</th><th>نسبة الإكمال</th><th>في الموعد</th></tr></thead><tbody>${
+      rows.map(r=>`<tr><td><b>${esc(key==='Sector'?lbl(SECTORS,r.k,true):r.k)}</b></td><td>${r.m.total}</td><td>${r.m.open}</td><td>${r.m.inprog}</td><td class="${r.m.overdue?'overdue':''}">${r.m.overdue}</td><td>${r.m.completed}</td><td><div class="bar"><i style="width:${r.m.progress}%"></i></div><b>${r.m.progress}%</b></td><td>${r.m.rate}%</td><td>${pct(r.m.ontimeRate)}</td></tr>`).join('')}</tbody></table>`;
+  };
+  $('#sumMember').innerHTML='<div class="muted" style="font-size:12px;padding:6px 10px"><b>نسبة الإنجاز</b> = متوسط نسبة التقدّم لكل المهام (المكتملة = 100%) · <b>نسبة الإكمال</b> = المهام المغلقة كمكتملة ÷ الإجمالي · <b>في الموعد</b> = المكتملة قبل تاريخ الاستحقاق</div>'+group('AssignedTo',[...new Set(list.map(t=>t.AssignedTo).filter(Boolean))].sort());
+  $('#sumSector').innerHTML=group('Sector',Object.keys(SECTORS));
+  const risk=list.filter(t=>isOverdue(t)||t.Status==='on_hold').sort((a,b)=>(a.DueDate||'').localeCompare(b.DueDate||''));
+  $('#sumRisk').innerHTML = risk.length?`<table><thead><tr><th>الرقم</th><th>المهمة</th><th>المُسند إليه</th><th>القطاع</th><th>الاستحقاق</th><th>الحالة</th><th>آخر تحديث</th></tr></thead><tbody>${risk.map(t=>`<tr><td class="id">${esc(t.TaskID)}</td><td>${esc(t.Title)}</td><td>${esc(t.AssignedTo)}</td><td>${esc(t.Sector)}</td><td class="${isOverdue(t)?'overdue':''}">${fmtDate(t.DueDate)}${isOverdue(t)?` (${daysLate(t)} يوم)`:''}</td><td><span class="chip s-${t.Status}">${lbl(STATUS,t.Status)}</span></td><td style="font-size:12px">${esc((t.UpdateLog||'').split('\n')[0]||'—')}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">لا توجد مهام متأخرة أو معلّقة ✓</div>';
+  const f=$('#sFrom').value,to=$('#sTo').value,se=$('#sSector').value;
+  $('#rpMeta').textContent=`الفترة: ${f||'البداية'} → ${to||'الآن'} · القطاع: ${se||'الكل'} · تاريخ الإصدار: ${nowStamp()} · ${CONFIG.VERSION}`;
+}
+function printView(id){
+  const v=document.getElementById(id); v.classList.add('printing');
+  window.print(); setTimeout(()=>v.classList.remove('printing'),500);
+}
+
+/* ---------- CSV export (opens in Excel with Arabic intact) ---------- */
+function exportCsv(list,name){
+  const cols=TASK_FIELDS;
+  const val=(t,k)=>{ let v=t[k]??''; if(k==='Status') v=lbl(STATUS,v,true); if(k==='Priority') v=lbl(PRIORITY,v,true); if(k==='Category') v=catLabel(t,true); if(k==='Source') v=srcLabel(t,true); if(k==='ReviewResult') v=v?lbl(REVIEW,v,true):''; return '"'+String(v).replace(/"/g,'""')+'"'; };
+  const csv='﻿'+cols.join(',')+'\n'+list.map(t=>cols.map(k=>val(t,k)).join(',')).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download=`${name}_${todayISO()}.csv`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+/* ---------- Team ---------- */
+function renderTeam(){
+  const byName={}; state.team.forEach(m=>byName[m.Name]=m);
+  const rows=TEAM_NAMES.map(n=>byName[n]||{MemberID:'',Name:n,Role:'',Sector:'',Email:'',Active:'Yes',Mobile:'',Extension:''})
+    .concat(state.team.filter(m=>!TEAM_NAMES.includes(m.Name)));
+  $('#teamTable').innerHTML=`<table><thead><tr><th>#</th><th>الاسم</th><th>الدور</th><th>القطاع</th><th>البريد</th><th>الجوال</th><th>التحويلة</th><th>نشط</th><th>مهام مفتوحة</th><th>متأخرة</th><th class="no-print"></th></tr></thead><tbody>${
+    rows.map((m,i)=>{const g=state.tasks.filter(t=>t.AssignedTo===m.Name);return `<tr><td class="muted">${i+1}</td><td><b>${esc(m.Name)}</b>${TEAM_NAMES.includes(m.Name)?'':' <span class="chip s-on_hold">خارج القائمة</span>'}</td><td>${esc(m.Role)||'<span class="muted">—</span>'}</td><td>${esc(m.Sector)||'—'}</td><td>${m.Email?`<a class="en" href="mailto:${esc(m.Email)}">${esc(m.Email)}</a>`:'—'}</td><td>${m.Mobile?`<a class="en" href="tel:${esc(m.Mobile)}">${esc(m.Mobile)}</a>`:'—'}</td><td><span class="en">${esc(m.Extension)||'—'}</span></td><td>${(m.Active||'Yes')==='No'?'لا':'نعم'}</td><td>${g.filter(isOpen).length}</td><td class="${g.filter(isOverdue).length?'overdue':''}">${g.filter(isOverdue).length}</td><td class="no-print"><button class="icon-btn" data-mname="${esc(m.Name)}" title="تعديل البيانات"><i data-lucide="pencil"></i></button>${m.MemberID?`<button class="icon-btn del" data-mdel="${esc(m.MemberID)}" title="مسح البيانات"><i data-lucide="eraser"></i></button>`:''}</td></tr>`;}).join('')}</tbody></table>
+  <div class="muted" style="font-size:12px;padding:8px">الأسماء من القائمة المعتمدة. أضف الدور والبريد والجوال والتحويلة لكل عضو؛ البريد يفعّل التذكيرات اليومية.</div>`;
+  icons();
+}
+
+/* ---------- Render all ---------- */
+function renderAll(){
+  renderTasks(); renderTeam();
+  if($('#view-dashboard').classList.contains('active')) renderDashboard();
+  if($('#view-summary').classList.contains('active')) renderSummary();
+}
+
+/* ---------- Wire-up ---------- */
+function init(){
+  // logos come from the shared Brand repo; if it can't be reached, use the embedded copies (Logos.html)
+  window.__logoFail=img=>{ const s=(window.ITOC_LOGOS||{})[img.dataset.logo]; img.onerror=null; if(s) img.src=s; return true; };
+  $$('img[data-logo][data-fail]').forEach(window.__logoFail);
+  $('#verLabel').textContent=CONFIG.VERSION;
+  const f=$('#taskForm');
+  fillSelect(f.Status,STATUS); fillSelect(f.Priority,PRIORITY); fillSelect(f.Sector,SECTORS,{blank:true});
+  fillSelect(f.Category,CATEGORIES,{blank:true}); fillSelect(f.Source,SOURCES); fillSelect(f.ReviewResult,REVIEW);
+  fillSelect($('#fStatus'),STATUS,{all:true,allLabel:'كل الحالات'});
+  fillSelect($('#fSector'),SECTORS,{all:true,allLabel:'كل القطاعات'});
+  fillSelect($('#fPriority'),PRIORITY,{all:true,allLabel:'كل الأولويات'});
+  fillSelect($('#dashSector'),SECTORS,{all:true,allLabel:'كل القطاعات'});
+  fillSelect($('#sSector'),SECTORS,{all:true,allLabel:'كل القطاعات'});
+  fillSelect($('#memberForm').Sector,SECTORS,{blank:true});
+
+  $('#nav').addEventListener('click',e=>{const b=e.target.closest('button[data-view]'); if(b) go(b.dataset.view);});
+  document.addEventListener('click',e=>{
+    const g=e.target.closest('[data-goto]'); if(g){ e.preventDefault(); if(g.dataset.new) newForm(); go(g.dataset.goto); return; }
+    const ed=e.target.closest('[data-edit]'); if(ed){ editTask(ed.dataset.edit); return; }
+    const dl=e.target.closest('[data-del]'); if(dl){ deleteTask(dl.dataset.del); return; }
+    const row=e.target.closest('#tblOverdue tr[data-id], #tblDueSoon tr[data-id]'); if(row){ editTask(row.dataset.id); return; }
+    const me=e.target.closest('[data-mname]'); if(me){ const m=state.team.find(x=>x.Name===me.dataset.mname)||{MemberID:'',Name:me.dataset.mname,Role:'',Sector:'',Email:'',Active:'Yes'}; const mf=$('#memberForm'); Object.keys(m).forEach(k=>{ if(mf[k]) mf[k].value=m[k]; }); mf.scrollIntoView({behavior:'smooth'}); return; }
+    const md=e.target.closest('[data-mdel]'); if(md){ if(confirm('مسح الدور والبريد لهذا العضو؟ (يبقى الاسم في القائمة)')){ busy(true); api.post('deleteMember',{id:md.dataset.mdel}).then(()=>reload(true)).then(()=>toast('تم الحذف')).catch(er=>toast(er.message,true)).finally(()=>busy(false)); } }
+  });
+  $('#taskTable').addEventListener('change',e=>{ if(e.target.classList.contains('quick-status')) quickStatus(e.target.dataset.id,e.target.value); });
+  $('#taskTable').addEventListener('click',e=>{ if(e.target.closest('select,button')) return; const tr=e.target.closest('tr[data-id]'); if(tr) editTask(tr.dataset.id); });
+  ['fSearch','fStatus','fSector','fPriority','fAssignee','fDue'].forEach(id=>$('#'+id).addEventListener('input',renderTasks));
+  $('#viewMode').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; state.viewMode=b.dataset.mode; $$('#viewMode button').forEach(x=>x.classList.toggle('on',x===b)); renderTasks();});
+  $('#btnExportCsv').addEventListener('click',()=>exportCsv(filteredTasks(),'IT_Tasks'));
+  f.addEventListener('submit',saveTask);
+  f.Progress.addEventListener('input',()=>$('#progOut').textContent=f.Progress.value+'%');
+  ['Category','Source'].forEach(n=>f[n].addEventListener('change',()=>syncOther(true)));
+  f.Status.addEventListener('change',()=>{ if(f.Status.value==='completed'){ f.Progress.value=100; $('#progOut').textContent='100%'; if(!f.CompletedDate.value) f.CompletedDate.value=todayISO(); }});
+  $('#btnNew').addEventListener('click',newForm);
+  $('#btnDelete').addEventListener('click',()=>deleteTask(f.TaskID.value));
+  $('#btnPrintTask').addEventListener('click',()=>printView('view-register'));
+  $('#btnRefresh').addEventListener('click',()=>reload());
+  $('#dashSector').addEventListener('change',renderDashboard);
+  ['sFrom','sTo','sSector'].forEach(id=>$('#'+id).addEventListener('change',()=>{ if(id!=='sSector') $('#sQuick').value=''; renderSummary(); }));
+  $('#sQuick').addEventListener('change',e=>{ const [a,b]=periodRange(e.target.value); $('#sFrom').value=a; $('#sTo').value=b; renderSummary(); });
+  $('#btnPrintSum').addEventListener('click',()=>{ renderSummary(); printView('view-summary'); });
+  $('#btnSumCsv').addEventListener('click',()=>exportCsv(summaryList(),'IT_Tasks_Summary'));
+
+  $('#memberForm').addEventListener('submit',async e=>{
+    e.preventDefault(); const mf=e.target; const ex=state.team.find(x=>x.Name===mf.Name.value); const m={MemberID:mf.MemberID.value||(ex?ex.MemberID:''),Name:mf.Name.value.trim(),Role:mf.Role.value.trim(),Sector:mf.Sector.value,Email:mf.Email.value.trim(),Active:mf.Active.value,Mobile:mf.Mobile.value.replace(/\s+/g,''),Extension:mf.Extension.value.trim()};
+    busy(true); try{ await api.post('saveMember',{member:m}); mf.reset(); mf.MemberID.value=''; mf.Name.value=''; toast('تم حفظ العضو ✓'); await reload(true); }catch(er){ toast(er.message,true); } finally{ busy(false); }
+  });
+  $('#btnMemReset').addEventListener('click',()=>{$('#memberForm').MemberID.value='';});
+
+  $('#btnBackup').addEventListener('click',()=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify({version:CONFIG.VERSION,exported:nowStamp(),tasks:state.tasks,team:state.team},null,2)],{type:'application/json'})); a.download=`IT_Tasks_backup_${todayISO()}.json`; a.click(); });
+
+  icons();
+  // first render straight from the data sent with the page (no extra round trip);
+  // the form is built after the names list so «أُسندت بواسطة» defaults to the signed-in user
+  if(BOOT && BOOT.ok){ applyData(BOOT); setConn('live'); refreshPeople(); newForm(); renderAll(); renderDashboard(); }
+  else { newForm(); reload(); }
+}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
