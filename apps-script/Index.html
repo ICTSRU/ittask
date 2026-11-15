@@ -126,6 +126,22 @@ td.id{font-family:Consolas,monospace;font-size:12px;color:var(--muted);direction
 .bar{height:6px;background:var(--purple-light);border-radius:3px;min-width:70px;overflow:hidden}
 .bar > i{display:block;height:100%;background:var(--purple)}
 .empty{padding:30px;text-align:center;color:var(--muted)}
+/* ===== Attachments (v3.4) ===== */
+.dropzone{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;border:2px dashed rgba(80,30,140,.3);border-radius:var(--radius);background:var(--purple-light);padding:18px;text-align:center;cursor:pointer;color:var(--purple-dark);font-weight:700}
+.dropzone:hover,.dropzone.over{border-color:var(--purple);background:#e6dcf5}
+.dropzone svg{width:22px;height:22px}
+.dropzone small{display:block;width:100%;font-weight:500;color:var(--muted);font-size:12px}
+.att-list{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.att{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;background:#fff}
+.att .ic{width:34px;height:34px;flex:none;border-radius:4px;display:grid;place-items:center;font-size:10px;font-weight:800;color:#fff;background:var(--blue);direction:ltr}
+.att .ic.pdf{background:#b42318}.att .ic.img{background:#1a7f4b}.att .ic.xls{background:#107c41}.att .ic.doc{background:#185abd}.att .ic.ppt{background:#c43e1c}.att .ic.zip{background:#6b5a80}
+.att .nm{flex:1;min-width:0}
+.att .nm b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;text-align:right;unicode-bidi:plaintext}
+.att .nm span{font-size:11.5px;color:var(--muted)}
+.att .nm bdi{white-space:nowrap}
+.att.pending{border-style:dashed;background:var(--bg)}
+.att-count{display:inline-flex;align-items:center;gap:2px;font-size:11px;font-weight:700;color:var(--purple);background:var(--purple-light);border-radius:999px;padding:0 7px;margin-inline-start:6px;vertical-align:middle}
+.att-count svg{width:12px;height:12px}
 
 /* ===== Filters ===== */
 .filters{display:grid;grid-template-columns:2fr repeat(5,1fr);gap:8px;margin-bottom:12px}
@@ -220,7 +236,7 @@ td.id{font-family:Consolas,monospace;font-size:12px;color:var(--muted);direction
     </div>
     <div class="chips">
       <span class="conn live" id="connChip" title="مسجّل الدخول بحساب الجامعة"><span class="dot"></span><span id="connText" class="en"><?= userEmail ?></span></span>
-      <span class="ver">الإصدار <span class="en" id="verLabel">v3.3</span></span>
+      <span class="ver">الإصدار <span class="en" id="verLabel">v3.4</span></span>
     </div>
   </div>
 </div>
@@ -351,6 +367,16 @@ td.id{font-family:Consolas,monospace;font-size:12px;color:var(--muted);direction
         </div>
       </div>
 
+      <div class="card" id="attCard">
+        <h3><i data-lucide="paperclip"></i>5. المرفقات · <span class="en muted">Attachments</span> <span class="chip s-assigned" id="attCountChip" style="margin-inline-start:auto">0</span></h3>
+        <label class="dropzone no-print" id="dropZone">
+          <input type="file" id="attInput" multiple hidden>
+          <i data-lucide="upload-cloud"></i> اسحب الملفات هنا أو اضغط للاختيار · <span class="en">Drop files or click to choose</span>
+          <small>حتى 10 ميجابايت للملف · 20 ملفًا لكل مهمة · PDF، صور، Word، Excel، PowerPoint، نص، ZIP · تُحفظ في Google Drive الخاص بالمنصة</small>
+        </label>
+        <div class="att-list" id="attList"></div>
+      </div>
+
       <div class="actions no-print">
         <button type="submit" class="btn" id="btnSave"><i data-lucide="save"></i>حفظ المهمة</button>
         <button type="button" class="btn sec" id="btnPrintTask"><i data-lucide="printer"></i>طباعة / PDF</button>
@@ -420,24 +446,24 @@ td.id{font-family:Consolas,monospace;font-size:12px;color:var(--muted);direction
 
 <footer class="sru-footer sru-tech-bg-dark"><div class="in">
   <div class="sru-support"><b>For Support:</b> Dial <span class="star" aria-label="star">*</span> <span class="or">or</span> Send email to: <a href="mailto:servicedesk@sr.edu.sa">servicedesk@sr.edu.sa</a></div>
-  <div class="ftr-note">© جامعة سليمان الراجحي — الإدارة التنفيذية للاتصالات وتقنية المعلومات · نظام إدارة المهام <span class="en">v3.3</span></div>
+  <div class="ftr-note">© جامعة سليمان الراجحي — الإدارة التنفيذية للاتصالات وتقنية المعلومات · نظام إدارة المهام <span class="en">v3.4</span></div>
   <a class="sru-itoc" href="https://ictsru.github.io/ITOC/#forms" target="_blank" rel="noopener" title="ITOC — IT Operations Center"><img src="https://ictsru.github.io/brand/logos/itoc-logo.png" data-logo="itoc" alt="ITOC — IT Operations Center" onerror="(window.__logoFail&amp;&amp;__logoFail(this))||(this.dataset.fail=1)"></a>
 </div></footer>
 
-<div class="print-ver">نظام إدارة مهام تقنية المعلومات · <span class="en">v3.3</span> · ITOC — جامعة سليمان الراجحي</div>
+<div class="print-ver">نظام إدارة مهام تقنية المعلومات · <span class="en">v3.4</span> · ITOC — جامعة سليمان الراجحي</div>
 <div class="toast" id="toast"></div>
 <div class="loading" id="loading">جارٍ التحميل… · Loading…</div>
 
 <?!= include('Logos') ?>
 <script>
 /* =====================================================================
-   IT Task List Management — v3.3  (runs inside the Apps Script Web App)
+   IT Task List Management — v3.4  (runs inside the Apps Script Web App)
    Access: @sr.edu.sa accounts on the AllowedUsers list (SRU Secure Access Kit v1.4).
    Look:   SRU Brand Kit, linked from https://ictsru.github.io/brand (tech background, brand bar, footer, logos).
    Data arrives with the page (BOOT); every change goes through google.script.run,
    and the server re-checks the signed-in account on every call.
    ===================================================================== */
-const CONFIG = { VERSION: 'v3.3' };
+const CONFIG = { VERSION: 'v3.4' };
 const BOOT = <?!= dataJson ?>;
 const ME = (BOOT && BOOT.me) || { email: '', name: '', role: 'user' };
 
@@ -473,7 +499,10 @@ const NAME_PLACEHOLDER = 'اختر الاسم';
 const TASK_FIELDS = ['TaskID','Title','Description','Sector','Category','Priority','Source','TicketRef','AssignedTo','AssignedBy','StartDate','DueDate','Status','Progress','CompletedDate','Reviewer','ReviewDate','ReviewResult','ReviewNotes','UpdateLog','CreatedAt','UpdatedAt','CreatedBy','CategoryOther','SourceOther','UpdatedBy'];
 
 /* ---------- State ---------- */
-const state = { tasks:[], team:[], mode:'live', viewMode:'table', charts:{} };
+const state = { tasks:[], team:[], attachments:[], pending:[], mode:'live', viewMode:'table', charts:{} };
+/* Attachments (v3.4) — same limits as the server (Code.gs) */
+const ATT = { MAX_MB: 10, MAX_PER_TASK: 20,
+  EXT: ['pdf','png','jpg','jpeg','gif','webp','bmp','doc','docx','xls','xlsx','csv','ppt','pptx','txt','log','json','xml','zip','rar','7z','msg','eml','vsd','vsdx','drawio'] };
 /* ---------- Helpers ---------- */
 const $ = (s,r=document)=>r.querySelector(s);
 const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
@@ -528,7 +557,10 @@ const api = {
       saveTask:     ()=>gsRun('apiSaveTask', payload.task),
       deleteTask:   ()=>gsRun('apiDeleteTask', payload.id),
       saveMember:   ()=>gsRun('apiSaveMember', payload.member),
-      deleteMember: ()=>gsRun('apiDeleteMember', payload.id)
+      deleteMember: ()=>gsRun('apiDeleteMember', payload.id),
+      uploadAttachment:   ()=>gsRun('apiUploadAttachment', payload.taskId, payload.file),
+      downloadAttachment: ()=>gsRun('apiDownloadAttachment', payload.id),
+      deleteAttachment:   ()=>gsRun('apiDeleteAttachment', payload.id)
     };
     if(!calls[action]) throw new Error('Unknown action');
     const j = await calls[action]();
@@ -540,6 +572,7 @@ const api = {
 function applyData(d){
   state.tasks = (d.tasks||[]).map(normalizeTask);
   state.team = d.team||[];
+  state.attachments = d.attachments||[];
   if(d.me){ ME.email=d.me.email; ME.name=d.me.name; ME.role=d.me.role; }
 }
 async function reload(silent){
@@ -621,7 +654,7 @@ function renderTasks(){
     const od=isOverdue(t);
     h+=`<tr data-id="${esc(t.TaskID)}">
       <td class="id">${esc(t.TaskID)}</td>
-      <td><b>${esc(t.Title)}</b><div class="muted" style="font-size:12px">${esc(catLabel(t))}${t.TicketRef?' · '+esc(t.TicketRef):''}</div></td>
+      <td><b>${esc(t.Title)}</b>${attOf(t.TaskID).length?`<span class="att-count" title="مرفقات · Attachments"><i data-lucide="paperclip"></i>${attOf(t.TaskID).length}</span>`:''}<div class="muted" style="font-size:12px">${esc(catLabel(t))}${t.TicketRef?' · '+esc(t.TicketRef):''}</div></td>
       <td>${esc(t.Sector)}</td>
       <td>${esc(t.AssignedTo)||'—'}</td>
       <td><span class="chip p-${esc(t.Priority)}">${esc(lbl(PRIORITY,t.Priority))}</span></td>
@@ -640,13 +673,99 @@ function renderBoard(list){
     const items=list.filter(t=>t.Status===k);
     h+=`<div class="col"><div class="col-h" style="border-top:3px solid ${STATUS_COLORS[k]}"><span>${v[0]} <span class="muted en" style="font-weight:500">${v[1]}</span></span><span class="chip s-${k}">${items.length}</span></div><div class="col-b">`;
     for(const t of items){
-      h+=`<div class="tcard pr-${esc(t.Priority)}" data-edit="${esc(t.TaskID)}"><div class="t">${esc(t.Title)}</div>
+      h+=`<div class="tcard pr-${esc(t.Priority)}" data-edit="${esc(t.TaskID)}"><div class="t">${esc(t.Title)}${attOf(t.TaskID).length?`<span class="att-count"><i data-lucide="paperclip"></i>${attOf(t.TaskID).length}</span>`:''}</div>
         <div class="m"><span>${esc(t.AssignedTo)||'—'}</span><span class="${isOverdue(t)?'overdue':''}">${fmtDate(t.DueDate)}</span></div>
         <div class="bar" style="margin-top:6px"><i style="width:${t.Progress}%"></i></div></div>`;
     }
     h+='</div></div>';
   }
-  $('#taskBoard').innerHTML=h;
+  $('#taskBoard').innerHTML=h; icons();
+}
+
+/* ---------- Attachments (v3.4) ---------- */
+const attOf = id => state.attachments.filter(a=>a.TaskID===id);
+const fmtSize = n => { n=+n||0; return n<1024? n+' B' : n<1048576? (n/1024).toFixed(0)+' KB' : (n/1048576).toFixed(1)+' MB'; };
+function attIcon(name){
+  const e=(name.split('.').pop()||'').toLowerCase();
+  const cls = e==='pdf'?'pdf' : ['png','jpg','jpeg','gif','webp','bmp'].includes(e)?'img' : ['xls','xlsx','csv'].includes(e)?'xls'
+            : ['doc','docx'].includes(e)?'doc' : ['ppt','pptx'].includes(e)?'ppt' : ['zip','rar','7z'].includes(e)?'zip' : '';
+  return `<div class="ic ${cls}">${esc(e.toUpperCase().slice(0,4)||'FILE')}</div>`;
+}
+const canDeleteAtt = a => ME.role==='admin' || (a.UploadedBy||'').toLowerCase()===(ME.email||'').toLowerCase();
+function currentTaskId(){ return $('#taskForm').TaskID.value; }
+function renderAttachments(){
+  const id=currentTaskId(), list=id?attOf(id):[];
+  let h=list.map(a=>`<div class="att">${attIcon(a.FileName)}
+      <div class="nm"><b title="${esc(a.FileName)}">${esc(a.FileName)}</b><span><bdi dir="ltr">${fmtSize(a.Size)}</bdi> · ${esc(a.UploadedByName||a.UploadedBy)} · <bdi dir="ltr">${esc(a.UploadedAt)}</bdi></span></div>
+      <button type="button" class="icon-btn no-print" data-attdl="${esc(a.AttachmentID)}" title="تنزيل · Download"><i data-lucide="download"></i></button>
+      ${canDeleteAtt(a)?`<button type="button" class="icon-btn del no-print" data-attdel="${esc(a.AttachmentID)}" title="حذف · Delete"><i data-lucide="trash-2"></i></button>`:''}
+    </div>`).join('');
+  h+=state.pending.map((f,i)=>`<div class="att pending">${attIcon(f.name)}
+      <div class="nm"><b title="${esc(f.name)}">${esc(f.name)}</b><span><bdi dir="ltr">${fmtSize(f.size)}</bdi> · سيُرفع بعد حفظ المهمة · <bdi dir="ltr">uploads after save</bdi></span></div>
+      <button type="button" class="icon-btn del no-print" data-attpend="${i}" title="إزالة"><i data-lucide="x"></i></button></div>`).join('');
+  $('#attList').innerHTML = h || '<div class="muted" style="font-size:12.5px;padding:4px 2px">لا توجد مرفقات · No attachments</div>';
+  $('#attCountChip').textContent = list.length + state.pending.length;
+  icons();
+}
+function checkFile(f, already){
+  const ext=(f.name.includes('.')?f.name.split('.').pop():'').toLowerCase();
+  if(!ATT.EXT.includes(ext)) return `نوع غير مسموح (.${ext||'?'})`;
+  if(f.size<=0) return 'ملف فارغ';
+  if(f.size>ATT.MAX_MB*1048576) return `أكبر من ${ATT.MAX_MB} ميجابايت`;
+  if(already>=ATT.MAX_PER_TASK) return `تجاوز الحد (${ATT.MAX_PER_TASK} ملفًا)`;
+  return '';
+}
+function readB64(f){
+  return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(',')[1]||''); r.onerror=()=>rej(new Error('تعذّرت قراءة الملف')); r.readAsDataURL(f); });
+}
+async function addFiles(fileList){
+  const id=currentTaskId(); let n=(id?attOf(id).length:0)+state.pending.length; const ok=[], bad=[];
+  for(const f of fileList){ const why=checkFile(f,n); if(why) bad.push(`${f.name}: ${why}`); else { ok.push(f); n++; } }
+  if(bad.length) toast('لم يُقبل: '+bad.join(' · '), true);
+  if(!ok.length) return;
+  if(!id){ state.pending.push(...ok); renderAttachments(); toast(`سيُرفع ${ok.length} ملف بعد حفظ المهمة`); return; }
+  await uploadFiles(id, ok);
+}
+async function uploadFiles(taskId, files){
+  let done=0; const errs=[];
+  busy(true);
+  try{
+    for(const f of files){
+      $('#loading').textContent=`جارٍ رفع الملفات ${done+1}/${files.length}… · Uploading`;
+      try{ await api.post('uploadAttachment',{taskId, file:{name:f.name, mime:f.type, b64:await readB64(f)}}); done++; }
+      catch(e){ errs.push(`${f.name}: ${e.message}`); }
+    }
+    applyData(await api.load());
+    // keep the open form in step with the server (upload lines were added to the update log)
+    const t=state.tasks.find(x=>x.TaskID===taskId), fm=$('#taskForm');
+    if(t && currentTaskId()===taskId){ fm.dataset.log=t.UpdateLog||''; $('#logView').textContent=t.UpdateLog||'—'; }
+  }finally{ $('#loading').textContent='جارٍ التحميل… · Loading…'; busy(false); }
+  renderAttachments(); renderTasks();
+  if(done) toast(`تم رفع ${done} ملف ✓`);
+  if(errs.length) toast('تعذّر رفع: '+errs.join(' · '), true);
+}
+async function downloadAttachment(attId){
+  busy(true);
+  try{
+    const r=await api.post('downloadAttachment',{id:attId});
+    const bin=atob(r.b64), bytes=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([bytes],{type:r.mime||'application/octet-stream'}));
+    a.download=r.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  }catch(e){ toast('تعذّر التنزيل: '+e.message,true); } finally{ busy(false); }
+}
+async function deleteAttachment(attId){
+  const a=state.attachments.find(x=>x.AttachmentID===attId); if(!a) return;
+  if(!confirm(`حذف المرفق «${a.FileName}»؟\nسيُنقل إلى سلة Google Drive (يمكن استرجاعه خلال 30 يومًا).`)) return;
+  busy(true);
+  try{
+    await api.post('deleteAttachment',{id:attId});
+    applyData(await api.load());
+    const t=state.tasks.find(x=>x.TaskID===a.TaskID), fm=$('#taskForm');
+    if(t && currentTaskId()===a.TaskID){ fm.dataset.log=t.UpdateLog||''; $('#logView').textContent=t.UpdateLog||'—'; }
+    toast('تم حذف المرفق');
+  }catch(e){ toast('فشل الحذف: '+e.message,true); } finally{ busy(false); }
+  renderAttachments(); renderTasks();
 }
 
 /* ---------- Register / edit form ---------- */
@@ -659,6 +778,7 @@ function newForm(){
   $('#regTitle').innerHTML='تسجيل مهمة جديدة<small class="en">Register Task</small>';
   $('#btnDelete').style.display='none'; f.dataset.log='';
   syncOther();
+  state.pending=[]; renderAttachments();
 }
 function editTask(id){
   const t=state.tasks.find(x=>x.TaskID===id); if(!t) return;
@@ -672,6 +792,7 @@ function editTask(id){
   $('#metaLine').textContent=`أُنشئت: ${t.CreatedAt||'—'}${t.CreatedBy?' · '+t.CreatedBy:''} · آخر تحديث: ${t.UpdatedAt||'—'}${t.UpdatedBy?' · '+t.UpdatedBy:''}`;
   $('#regTitle').innerHTML=`تعديل المهمة <span class="en" style="font-size:14px;color:var(--muted)">${esc(t.TaskID)}</span><small class="en">Edit / Track / Review Task</small>`;
   $('#btnDelete').style.display='';
+  state.pending=[]; renderAttachments();
   go('register');
 }
 async function saveTask(e){
@@ -705,13 +826,16 @@ async function saveTask(e){
   try{
     const r=await api.post('saveTask',{task:t});
     toast(prev?'تم تحديث المهمة ✓':'تم تسجيل المهمة ✓ '+(r.task?.TaskID||''));
+    const queued=state.pending.slice();
     await reload(true);
     editTask(r.task?.TaskID||t.TaskID);
+    if(queued.length){ busy(false); await uploadFiles(r.task?.TaskID||t.TaskID, queued); }
   }catch(err){ toast('فشل الحفظ: '+err.message,true); }
   finally{ busy(false); }
 }
 async function deleteTask(id){
-  if(!confirm(`حذف المهمة ${id}؟ لا يمكن التراجع.\nDelete task ${id}?`)) return;
+  const n=attOf(id).length;
+  if(!confirm(`حذف المهمة ${id}؟ لا يمكن التراجع.${n?`\nسيُنقل ${n} مرفق إلى سلة Google Drive.`:''}\nDelete task ${id}?`)) return;
   busy(true);
   try{ await api.post('deleteTask',{id}); toast('تم الحذف'); await reload(true); go('tasks'); }
   catch(e){ toast('فشل الحذف: '+e.message,true); } finally{ busy(false); }
@@ -909,6 +1033,18 @@ function init(){
   $('#btnMemReset').addEventListener('click',()=>{$('#memberForm').MemberID.value='';});
 
   $('#btnBackup').addEventListener('click',()=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify({version:CONFIG.VERSION,exported:nowStamp(),tasks:state.tasks,team:state.team},null,2)],{type:'application/json'})); a.download=`IT_Tasks_backup_${todayISO()}.json`; a.click(); });
+
+  // attachments: click / drag & drop / list buttons
+  $('#attInput').addEventListener('change',e=>{ const fl=[...e.target.files]; e.target.value=''; addFiles(fl); });
+  const dz=$('#dropZone');
+  ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{ e.preventDefault(); dz.classList.add('over'); }));
+  ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{ e.preventDefault(); dz.classList.remove('over'); }));
+  dz.addEventListener('drop',e=>{ if(e.dataTransfer && e.dataTransfer.files.length) addFiles([...e.dataTransfer.files]); });
+  $('#attList').addEventListener('click',e=>{
+    const dl=e.target.closest('[data-attdl]'); if(dl){ downloadAttachment(dl.dataset.attdl); return; }
+    const del=e.target.closest('[data-attdel]'); if(del){ deleteAttachment(del.dataset.attdel); return; }
+    const pd=e.target.closest('[data-attpend]'); if(pd){ state.pending.splice(+pd.dataset.attpend,1); renderAttachments(); }
+  });
 
   icons();
   // first render straight from the data sent with the page (no extra round trip);

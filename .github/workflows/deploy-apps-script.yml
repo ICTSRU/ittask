@@ -1,7 +1,8 @@
-# IT Task List Management — automatic Apps Script update · autodeploy v1.5 (SOP autodeploy v1.3 + default deployment + target-project check)
+# IT Task List Management — automatic Apps Script update · autodeploy v1.6 (SOP autodeploy v1.3 + default deployment + target-project check + [push-only])
 # Every push that changes apps-script/** (or a manual "Run workflow") pushes the files to the Apps Script
 # project and moves the EXISTING web-app deployment to a new version — the /exec URL stays the same.
 # Secrets (Settings ▸ Secrets and variables ▸ Actions): CLASPRC_JSON · SCRIPT_ID   (DEPLOYMENT_ID optional — see below)
+# Commit message containing [push-only] → push the code but keep the live version (e.g. before approving a new Google permission).
 # SCRIPT_ID is per platform: copy it from the Task Register Sheet ▸ Extensions ▸ Apps Script ▸ Project Settings (never SOP's).
 name: Deploy Apps Script
 
@@ -64,7 +65,12 @@ jobs:
           printf '{"scriptId":"%s","rootDir":"."}' "$SCRIPT_ID" > .clasp.json
           clasp push --force
 
+      - name: Push-only commit — live version left unchanged
+        if: ${{ contains(github.event.head_commit.message, '[push-only]') }}
+        run: echo "### ⏸ Code pushed to Apps Script; the live web app was NOT changed ([push-only]). Run this workflow again to publish." >> "$GITHUB_STEP_SUMMARY"
+
       - name: New version on the same deployment (URL unchanged)
+        if: ${{ !contains(github.event.head_commit.message, '[push-only]') }}
         working-directory: apps-script
         run: |
           VER=$(grep -oP "APP_VERSION\s*=\s*'\K[0-9.]+" Code.gs || echo "?")

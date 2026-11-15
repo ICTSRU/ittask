@@ -1,4 +1,4 @@
-# IT Task List Management — automatic Apps Script update (autodeploy v1.5)
+# IT Task List Management — automatic Apps Script update (autodeploy v1.6)
 
 Same mechanism as the SOP platform (`ICTSRU/SOP`). After a **one-time setup (~5 min)**, updating the platform means only: **upload the files to GitHub**.
 GitHub then pushes them to Apps Script and publishes a new version on the **same /exec URL** — no copy-paste, no "Manage deployments".
@@ -23,6 +23,13 @@ Steps 1–2 were already done for the SOP platform (same Google account) — reu
 
 ### Tip — set `CLASPRC_JSON` once for every platform
 In the **ICTSRU organisation** ▸ Settings ▸ Secrets and variables ▸ Actions ▸ **New organization secret** `CLASPRC_JSON` (Repository access: all repositories). Then each new platform needs only its own `SCRIPT_ID`. A repository secret with the same name overrides the organisation one.
+
+## New Google permission (e.g. Drive in v3.4)
+
+When new code needs a permission the project has not been granted yet, the live web app must not switch to it before the owner approves:
+1. Commit with **`[push-only]`** in the message → the code reaches Apps Script, the live version stays as it is.
+2. Apps Script editor ▸ run the setup function (v3.4: `setupAttachments`) ▸ **Allow**.
+3. Actions ▸ **Deploy Apps Script** ▸ **Run workflow** → the new version goes live.
 
 ## Every update afterwards
 

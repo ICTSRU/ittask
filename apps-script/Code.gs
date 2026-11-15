@@ -1,10 +1,12 @@
 /**
  * =====================================================================
- *  IT Task List Management · إدارة مهام تقنية المعلومات — v3.3
+ *  IT Task List Management · إدارة مهام تقنية المعلومات — v3.4
  *  Sulaiman Al Rajhi University · ICTD · IT Operations Center (ITOC)
  *  Built on: SRU Secure Access Kit v1.4 · Look: SRU Brand Kit (linked from ictsru.github.io/brand)
  * ---------------------------------------------------------------------
  *  Files:  Code.gs · Index.html · Logos.html · Denied.html
+ *  Attachments (v3.4): Google Drive folder next to the Sheet (one sub-folder per task) + sheet "Attachments".
+ *          First time only: run  setupAttachments  from the editor and allow Google Drive access.
  *  Sheet:  «سجل مهام تقنية المعلومات - ICTD Task Register»
  *  Deploy: automatic — push apps-script/** to GitHub (ICTSRU/ittask) ▸ Actions ▸ Deploy Apps Script
  *          (manual fallback: Deploy ▸ Manage deployments ▸ ✏️ ▸ Version: New version)
@@ -18,7 +20,7 @@
 /* ▼▼▼ CONFIG — Secure Access Kit ▼▼▼ */
 const APP_NAME       = 'إدارة مهام تقنية المعلومات';
 const APP_NAME_EN    = 'IT Task List Management';
-const APP_VERSION    = '3.3';
+const APP_VERSION    = '3.4';
 const ALLOWED_DOMAIN = 'sr.edu.sa';
 const FAVICON_URL    = 'https://ictsru.github.io/ITOC/assets/itoc-logo.png';
 
@@ -56,6 +58,15 @@ const TASK_HEADERS = ['TaskID','Title','Description','Sector','Category','Priori
   'UpdatedBy'];                           // v3.0: signed-in e-mail of the last editor (set by the server)
 const TEAM_HEADERS  = ['MemberID','Name','Role','Sector','Email','Active','Mobile','Extension'];
 const AUDIT_HEADERS = ['Timestamp','Action','RecordID','Summary','By'];
+/* v3.4 — task attachments */
+const SHEET_FILES   = 'Attachments';
+const FILE_HEADERS  = ['AttachmentID','TaskID','FileName','MimeType','Size','FileId','UploadedBy','UploadedByName','UploadedAt'];
+const ATTACH_FOLDER_NAME = 'ICTD Task Register — المرفقات (Attachments)';
+const PROP_ATTACH_FOLDER = 'ATTACH_FOLDER_ID';
+const MAX_FILE_MB        = 10;   // per file (google.script.run payload stays well inside its limit)
+const MAX_FILES_PER_TASK = 20;
+const ALLOWED_EXT = ['pdf','png','jpg','jpeg','gif','webp','bmp','doc','docx','xls','xlsx','csv','ppt','pptx',
+  'txt','log','json','xml','zip','rar','7z','msg','eml','vsd','vsdx','drawio'];
 const TEAM_NAMES = ['Dr. Nasser Abounar','Mohamed ElMahdy','Mohamed Nawaz','Mohamed Omar','Mohamed Saleh',
   'Ammar Alrowedan','Nayed Alrashidi','Abd Alazez Alawaji','Azzam Alaqeel','Asma Alolayan',
   'Shath Albusyli','Inshrah Almutairi','عاطف النادي','سراج'];
@@ -100,8 +111,13 @@ function getInitialData_(email) {
     ok: true,
     tasks: readAll_(SHEET_TASKS, TASK_HEADERS),
     team: readAll_(SHEET_TEAM, TEAM_HEADERS),
+    attachments: publicAttachments_(),
     me: whoAmI_(email)
   };
+}
+
+function publicAttachments_() {
+  return readAll_(SHEET_FILES, FILE_HEADERS).map(function (a) { delete a.FileId; return a; });
 }
 
 /* ================ Server calls from the page (google.script.run) ================
@@ -125,10 +141,144 @@ function apiSaveTask(task) {
 function apiDeleteTask(id) {
   const email = requireSruUser_();
   return withLock_(function () {
-    deleteRow_(SHEET_TASKS, TASK_HEADERS, 'TaskID', String(id || ''));
-    audit_('deleteTask', id, '', email);
+    id = String(id || '');
+    deleteRow_(SHEET_TASKS, TASK_HEADERS, 'TaskID', id);
+    const removed = removeTaskAttachments_(id);           // files go to Drive trash (recoverable for 30 days)
+    audit_('deleteTask', id, removed ? removed + ' attachment(s) moved to Drive trash' : '', email);
     return { ok: true };
   });
+}
+
+/* ========================= Attachments (v3.4) ========================= */
+
+/** Upload one file to a task. file = {name, mime, b64}. Returns the new attachment record. */
+function apiUploadAttachment(taskId, file) {
+  const email = requireSruUser_();
+  taskId = String(taskId || '');
+  file = file || {};
+  const name = safeFileName_(file.name);
+  const ext = (name.split('.').pop() || '').toLowerCase();
+  if (name.indexOf('.') < 0 || ALLOWED_EXT.indexOf(ext) < 0) throw new Error('نوع الملف غير مسموح · File type not allowed: .' + ext);
+  const bytes = Utilities.base64Decode(String(file.b64 || ''));
+  if (!bytes.length) throw new Error('الملف فارغ · Empty file');
+  if (bytes.length > MAX_FILE_MB * 1024 * 1024) throw new Error('حجم الملف أكبر من ' + MAX_FILE_MB + ' ميجابايت · File larger than ' + MAX_FILE_MB + ' MB');
+  if (findRow_(sheet_(SHEET_TASKS, TASK_HEADERS), TASK_HEADERS.indexOf('TaskID'), taskId) < 0) throw new Error('المهمة غير موجودة — احفظ المهمة أولاً · Task not found');
+  const count = readAll_(SHEET_FILES, FILE_HEADERS).filter(function (a) { return a.TaskID === taskId; }).length;
+  if (count >= MAX_FILES_PER_TASK) throw new Error('الحد الأقصى ' + MAX_FILES_PER_TASK + ' مرفقًا لكل مهمة · Max attachments per task reached');
+
+  const me = whoAmI_(email);
+  const mime = String(file.mime || '') || 'application/octet-stream';
+  const driveFile = taskFolder_(taskId).createFile(Utilities.newBlob(bytes, mime, name));
+  try { driveFile.setDescription('Task ' + taskId + ' · uploaded by ' + email + ' · ' + APP_NAME_EN); } catch (e) {}
+
+  return withLock_(function () {
+    const a = {
+      AttachmentID: 'ATT-' + Utilities.getUuid().slice(0, 8).toUpperCase(),
+      TaskID: taskId, FileName: name, MimeType: mime, Size: String(bytes.length),
+      FileId: driveFile.getId(), UploadedBy: email, UploadedByName: me.name, UploadedAt: stamp_()
+    };
+    sheet_(SHEET_FILES, FILE_HEADERS).appendRow(FILE_HEADERS.map(function (h) { return clean_(a[h]); }));
+    appendTaskLog_(taskId, me.name, 'إرفاق ملف: ' + name, email);
+    audit_('uploadAttachment', taskId, name + ' (' + a.AttachmentID + ')', email);
+    delete a.FileId;
+    return { ok: true, attachment: a };
+  });
+}
+
+/** Returns {name, mime, b64} — files are read through the platform (access list applies), never shared publicly. */
+function apiDownloadAttachment(attId) {
+  requireSruUser_();
+  const a = findAttachment_(attId);
+  const blob = DriveApp.getFileById(a.FileId).getBlob();
+  return { ok: true, name: a.FileName, mime: a.MimeType || blob.getContentType(), b64: Utilities.base64Encode(blob.getBytes()) };
+}
+
+/** Uploader or an admin may delete. The Drive file goes to trash (recoverable for 30 days). */
+function apiDeleteAttachment(attId) {
+  const email = requireSruUser_();
+  const me = whoAmI_(email);
+  return withLock_(function () {
+    const a = findAttachment_(attId);
+    if (a.UploadedBy.toLowerCase() !== email && me.role !== 'admin') throw new Error('الحذف متاح لمن رفع الملف أو للمسؤول فقط · Only the uploader or an admin can delete');
+    try { DriveApp.getFileById(a.FileId).setTrashed(true); } catch (e) { console.warn('trash failed: ' + e); }
+    deleteRow_(SHEET_FILES, FILE_HEADERS, 'AttachmentID', a.AttachmentID);
+    appendTaskLog_(a.TaskID, me.name, 'حذف مرفق: ' + a.FileName, email);
+    audit_('deleteAttachment', a.TaskID, a.FileName + ' (' + a.AttachmentID + ')', email);
+    return { ok: true };
+  });
+}
+
+function findAttachment_(attId) {
+  const a = readAll_(SHEET_FILES, FILE_HEADERS).filter(function (x) { return x.AttachmentID === String(attId || ''); })[0];
+  if (!a) throw new Error('المرفق غير موجود · Attachment not found');
+  return a;
+}
+
+function removeTaskAttachments_(taskId) {
+  const list = readAll_(SHEET_FILES, FILE_HEADERS).filter(function (a) { return a.TaskID === taskId; });
+  list.forEach(function (a) {
+    try { DriveApp.getFileById(a.FileId).setTrashed(true); } catch (e) { console.warn('trash failed: ' + e); }
+    try { deleteRow_(SHEET_FILES, FILE_HEADERS, 'AttachmentID', a.AttachmentID); } catch (e) {}
+  });
+  if (list.length) {
+    try { const it = attachRoot_().getFoldersByName(taskId); while (it.hasNext()) it.next().setTrashed(true); } catch (e) {}
+  }
+  return list.length;
+}
+
+/** Root folder: created next to the Sheet on first use; its ID is kept in Script Properties. */
+function attachRoot_() {
+  const props = PropertiesService.getScriptProperties();
+  const id = props.getProperty(PROP_ATTACH_FOLDER);
+  if (id) {
+    try { const f = DriveApp.getFolderById(id); if (!f.isTrashed()) return f; } catch (e) { /* recreate below */ }
+  }
+  let parent = DriveApp.getRootFolder();
+  try { const ps = DriveApp.getFileById(SpreadsheetApp.getActiveSpreadsheet().getId()).getParents(); if (ps.hasNext()) parent = ps.next(); } catch (e) {}
+  const folder = parent.createFolder(ATTACH_FOLDER_NAME);
+  folder.setDescription('Task attachments for ' + APP_NAME_EN + ' — managed by the platform; do not rename task folders.');
+  props.setProperty(PROP_ATTACH_FOLDER, folder.getId());
+  return folder;
+}
+
+function taskFolder_(taskId) {
+  const root = attachRoot_();
+  const it = root.getFoldersByName(taskId);
+  return it.hasNext() ? it.next() : root.createFolder(taskId);
+}
+
+/** Adds a line at the top of the task's update log (same format as the page). */
+function appendTaskLog_(taskId, name, text, email) {
+  const sh = sheet_(SHEET_TASKS, TASK_HEADERS);
+  const idx = findRow_(sh, TASK_HEADERS.indexOf('TaskID'), taskId);
+  if (idx < 0) return;
+  const logCol = TASK_HEADERS.indexOf('UpdateLog') + 1;
+  const old = String(sh.getRange(idx, logCol).getValue() || '');
+  const line = '[' + stamp_() + ' · ' + (name || email) + '] ' + text;
+  sh.getRange(idx, logCol).setValue(clean_(line + (old ? '\n' + old : '')));
+  sh.getRange(idx, TASK_HEADERS.indexOf('UpdatedAt') + 1).setValue(stamp_());
+  sh.getRange(idx, TASK_HEADERS.indexOf('UpdatedBy') + 1).setValue(email);
+}
+
+function safeFileName_(n) {
+  n = String(n || '').replace(/[\\/:*?"<>|\u0000-\u001f]+/g, '_').replace(/^[.\s]+/, '').trim();
+  if (n.length > 120) { const dot = n.lastIndexOf('.'); const ext = dot > 0 ? n.slice(dot) : ''; n = n.slice(0, 120 - ext.length) + ext; }
+  return n || 'file';
+}
+
+/** Run once from the editor (Select function ▸ setupAttachments ▸ Run): allows Google Drive access and creates the folder + sheet. */
+function setupAttachments() {
+  sheet_(SHEET_FILES, FILE_HEADERS);
+  const folder = attachRoot_();
+  const msg = 'مجلد المرفقات جاهز: ' + folder.getName() + '\n' + folder.getUrl();
+  console.log(msg);
+  try { SpreadsheetApp.getActive().toast('مجلد المرفقات جاهز ✓', APP_NAME_EN, 8); } catch (e) {}
+  return folder.getUrl();
+}
+
+function showAttachmentsFolder() {
+  const ui = SpreadsheetApp.getUi();
+  ui.alert('مجلد المرفقات', attachRoot_().getUrl(), ui.ButtonSet.OK);
 }
 
 function apiSaveMember(member) {
@@ -261,6 +411,7 @@ function setup() {
 
   setupAccessList();
   getLogSheet_();
+  setupAttachments();
   return 'Setup complete';
 }
 
@@ -450,6 +601,9 @@ function onOpen() {
       .addItem('حذف سجلات الدخول القديمة', 'purgeOldLogs')
       .addSeparator()
       .addItem('تفعيل التذكير اليومي بالمهام (07:00)', 'installDailyReminder')
+      .addSeparator()
+      .addItem('تفعيل المرفقات وصلاحية Drive (setupAttachments)', 'setupAttachments')
+      .addItem('فتح مجلد المرفقات', 'showAttachmentsFolder')
       .addItem('عرض رابط المنصة', 'showWebAppUrl')
       .addToUi();
   } catch (e) { /* standalone: no sheet UI */ }

@@ -2,6 +2,19 @@
 
 All notable changes to this project are recorded here. Versions use one digit after the decimal point (… v1.8, v1.9, v2.0).
 
+## [v3.4] — 2026-11-15
+### Added
+- **Task attachments** — section «5. المرفقات · Attachments» in the task form: drag & drop or click to choose, download, delete. On a new task, chosen files are queued and upload right after the first save.
+- Files are stored in Google Drive in a folder next to the Sheet (`ICTD Task Register — المرفقات (Attachments)`), one sub-folder per task (named with the Task ID). They are **not shared** — downloads go through the platform, so the access list applies.
+- New sheet `Attachments`: AttachmentID · TaskID · FileName · MimeType · Size · FileId · UploadedBy · UploadedByName · UploadedAt.
+- Server calls `apiUploadAttachment`, `apiDownloadAttachment`, `apiDeleteAttachment` (each checks the signed-in account). Limits: 10 MB per file, 20 files per task, common work file types only (checked in the browser and on the server).
+- Every upload / deletion adds a line to the task's update log and to `Audit`.
+- Delete rights: the uploader or an admin. Deleted files go to the Drive trash (recoverable for 30 days).
+- Deleting a task moves its attachments and folder to the Drive trash.
+- Paperclip count next to each task in the task list and on Kanban cards.
+- `setupAttachments` (also in the sheet menu) — run once from the editor to allow Google Drive access and create the folder; menu item «فتح مجلد المرفقات».
+- Workflow (autodeploy v1.6): a commit message containing `[push-only]` pushes the code without changing the live version (used when a new Google permission must be approved first).
+
 ## [v3.3] — 2026-11-03
 ### Added
 - **Automatic Apps Script update from GitHub** (same mechanism as the SOP platform): `.github/workflows/deploy-apps-script.yml` (clasp 2.4.2) pushes `apps-script/` to the project bound to the Task Register Sheet and moves the existing web-app deployment to a new version on every change — same /exec URL. Guide: `AUTODEPLOY.md`.

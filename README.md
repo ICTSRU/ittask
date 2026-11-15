@@ -1,4 +1,4 @@
-# إدارة مهام تقنية المعلومات · IT Task List Management — v3.3
+# إدارة مهام تقنية المعلومات · IT Task List Management — v3.4
 
 **Register, assign, track, and review departmental tasks** — Sulaiman Al Rajhi University · ICTD · IT Operations Center (ITOC)
 
@@ -72,6 +72,17 @@ No `setup` run is needed — the sheet structure did not change.
 
 **Future Brand changes** (colours, logos, footer): edit them once in **ICTSRU/brand** — this platform picks them up on next load. Add `?v=1.2` to the two `<link>` lines only if browsers keep showing the old look.
 
+## 2a. Task attachments (v3.4)
+
+| Item | Detail |
+|---|---|
+| Where files live | Google Drive, folder «ICTD Task Register — المرفقات (Attachments)» next to the Sheet; one sub-folder per Task ID. Not shared — downloads go through the platform (access list applies) |
+| Register | Sheet `Attachments` (who uploaded what, when, size) |
+| Limits | 10 MB per file · 20 files per task · PDF, images, Word, Excel, PowerPoint, text/CSV, ZIP/RAR/7z, e-mail (.msg/.eml), Visio/draw.io |
+| Delete | Uploader or admin; file goes to Drive trash (30 days). Deleting a task trashes its attachments |
+| Trail | Each upload/deletion is written to the task's update log and `Audit` |
+| First time | Apps Script editor ▸ select **`setupAttachments`** ▸ **Run** ▸ allow Google Drive access (or sheet menu ▸ «تفعيل المرفقات وصلاحية Drive») |
+
 ## 3. Access control
 
 | Setting (top of `Code.gs`) | Default | Meaning |
@@ -106,7 +117,7 @@ Names are resolved from the `Team` tab (by e-mail), then the `AllowedUsers` name
 |---|---|
 | لوحة المعلومات · Dashboard | KPI tiles (total, open, overdue, under review, progress, completed, on-time), charts by status / sector / workload / priority, overdue and due-in-7-days lists |
 | قائمة المهام · Task List | Search + 6 filters, table or Kanban, inline status change, CSV export |
-| تسجيل مهمة · Register | Task details → assignment → tracking (progress, update log) → review & sign-off; «أخرى» free-text |
+| تسجيل مهمة · Register | Task details → assignment → tracking (progress, update log) → review & sign-off → **attachments**; «أخرى» free-text |
 | الملخص والتقارير · Summary | Period/sector filters, headline figures, performance by member and sector, risk list, print/PDF, CSV, JSON backup |
 | فريق العمل · Team | Official names list with role, sector, e-mail, mobile, extension |
 
@@ -117,6 +128,8 @@ Sectors: NOC · SOC · DSSC · AAU · ITOC · ICTD.
 ## 7. Data model
 
 **Tasks:** `TaskID · Title · Description · Sector · Category · Priority · Source · TicketRef · AssignedTo · AssignedBy · StartDate · DueDate · Status · Progress · CompletedDate · Reviewer · ReviewDate · ReviewResult · ReviewNotes · UpdateLog · CreatedAt · UpdatedAt · CreatedBy · CategoryOther · SourceOther · UpdatedBy`
+
+**Attachments:** `AttachmentID · TaskID · FileName · MimeType · Size · FileId · UploadedBy · UploadedByName · UploadedAt` — files in the Drive folder «ICTD Task Register — المرفقات (Attachments)», one sub-folder per Task ID
 
 **Team:** `MemberID · Name · Role · Sector · Email · Active · Mobile · Extension` · **Audit:** `Timestamp · Action · RecordID · Summary · By`
 **AllowedUsers:** `email · name · role · active · notes` · **AccessLog:** see §4
