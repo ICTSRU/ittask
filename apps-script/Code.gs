@@ -1,6 +1,6 @@
 /**
  * =====================================================================
- *  IT Task List Management · إدارة مهام تقنية المعلومات — v3.4
+ *  IT Task List Management · إدارة مهام تقنية المعلومات — v3.5
  *  Sulaiman Al Rajhi University · ICTD · IT Operations Center (ITOC)
  *  Built on: SRU Secure Access Kit v1.4 · Look: SRU Brand Kit (linked from ictsru.github.io/brand)
  * ---------------------------------------------------------------------
@@ -20,7 +20,7 @@
 /* ▼▼▼ CONFIG — Secure Access Kit ▼▼▼ */
 const APP_NAME       = 'إدارة مهام تقنية المعلومات';
 const APP_NAME_EN    = 'IT Task List Management';
-const APP_VERSION    = '3.4';
+const APP_VERSION    = '3.5';
 const ALLOWED_DOMAIN = 'sr.edu.sa';
 const FAVICON_URL    = 'https://ictsru.github.io/ITOC/assets/itoc-logo.png';
 

@@ -193,6 +193,26 @@ td.id{font-family:Consolas,monospace;font-size:12px;color:var(--muted);direction
 .print-ver{display:none;text-align:center;font-size:10px;color:var(--muted);margin-top:8px}
 .sum-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:12px}
 .sum-cell{border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;background:var(--bg)}
+/* ===== Drill-down from numbers (v3.5) ===== */
+[data-drill]{cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s}
+.kpi[data-drill]:hover,.sum-cell[data-drill]:hover,.kpi[data-drill]:focus-visible,.sum-cell[data-drill]:focus-visible{border-color:var(--purple);box-shadow:0 3px 10px rgba(80,30,140,.14);transform:translateY(-1px);outline:none}
+.kpi[data-drill]::after,.sum-cell[data-drill]::after{content:"عرض المهام ‹";display:block;font-size:10.5px;font-weight:700;color:var(--purple);opacity:0;transition:opacity .15s}
+.kpi[data-drill]:hover::after,.sum-cell[data-drill]:hover::after,.kpi[data-drill]:focus-visible::after,.sum-cell[data-drill]:focus-visible::after{opacity:1}
+a.drill-num{color:inherit;text-decoration:none;font-weight:700;border-bottom:1px dashed rgba(80,30,140,.45);padding:0 2px}
+a.drill-num:hover,a.drill-num:focus-visible{color:var(--purple);border-bottom-style:solid;outline:none}
+.modal{position:fixed;inset:0;z-index:95;background:rgba(36,20,54,.45);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
+.modal[hidden]{display:none}
+.modal-box{background:#fff;border-radius:6px;width:100%;max-width:1100px;box-shadow:0 18px 50px rgba(0,0,0,.25);display:flex;flex-direction:column;max-height:calc(100vh - 80px)}
+.modal-h{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);border-top:4px solid var(--purple);border-radius:6px 6px 0 0}
+.modal-h h3{margin:0;font-size:16px;color:var(--purple-dark);flex:1;min-width:0}
+.modal-h h3 small{display:block;font-size:12px;font-weight:600;color:var(--muted)}
+.modal-b{overflow:auto;padding:0}
+.modal-b table{font-size:13px}
+.modal-b tbody tr{cursor:pointer}
+.modal-f{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 16px;border-top:1px solid var(--border);flex-wrap:wrap}
+@media(max-width:600px){.modal{padding:10px 8px}.modal-box{max-height:calc(100vh - 20px)}.modal-b table{min-width:760px}}
+.modal-b td,.modal-b th{white-space:nowrap}
+.modal-b td:nth-child(2){white-space:normal;min-width:180px}
 .sum-cell b{display:block;font-size:20px;color:var(--purple-dark)}
 .sum-cell span{font-size:12px;color:var(--muted);font-weight:700}
 
@@ -236,7 +256,7 @@ td.id{font-family:Consolas,monospace;font-size:12px;color:var(--muted);direction
     </div>
     <div class="chips">
       <span class="conn live" id="connChip" title="مسجّل الدخول بحساب الجامعة"><span class="dot"></span><span id="connText" class="en"><?= userEmail ?></span></span>
-      <span class="ver">الإصدار <span class="en" id="verLabel">v3.4</span></span>
+      <span class="ver">الإصدار <span class="en" id="verLabel">v3.5</span></span>
     </div>
   </div>
 </div>
@@ -446,24 +466,38 @@ td.id{font-family:Consolas,monospace;font-size:12px;color:var(--muted);direction
 
 <footer class="sru-footer sru-tech-bg-dark"><div class="in">
   <div class="sru-support"><b>For Support:</b> Dial <span class="star" aria-label="star">*</span> <span class="or">or</span> Send email to: <a href="mailto:servicedesk@sr.edu.sa">servicedesk@sr.edu.sa</a></div>
-  <div class="ftr-note">© جامعة سليمان الراجحي — الإدارة التنفيذية للاتصالات وتقنية المعلومات · نظام إدارة المهام <span class="en">v3.4</span></div>
+  <div class="ftr-note">© جامعة سليمان الراجحي — الإدارة التنفيذية للاتصالات وتقنية المعلومات · نظام إدارة المهام <span class="en">v3.5</span></div>
   <a class="sru-itoc" href="https://ictsru.github.io/ITOC/#forms" target="_blank" rel="noopener" title="ITOC — IT Operations Center"><img src="https://ictsru.github.io/brand/logos/itoc-logo.png" data-logo="itoc" alt="ITOC — IT Operations Center" onerror="(window.__logoFail&amp;&amp;__logoFail(this))||(this.dataset.fail=1)"></a>
 </div></footer>
 
-<div class="print-ver">نظام إدارة مهام تقنية المعلومات · <span class="en">v3.4</span> · ITOC — جامعة سليمان الراجحي</div>
+<div class="print-ver">نظام إدارة مهام تقنية المعلومات · <span class="en">v3.5</span> · ITOC — جامعة سليمان الراجحي</div>
+<div class="modal no-print" id="drill" hidden role="dialog" aria-modal="true" aria-labelledby="drillTitle">
+  <div class="modal-box">
+    <div class="modal-h">
+      <h3 id="drillTitle">—</h3>
+      <span class="chip s-in_progress" id="drillCount">0</span>
+      <button type="button" class="icon-btn" id="drillClose" title="إغلاق · Close (Esc)"><i data-lucide="x"></i></button>
+    </div>
+    <div class="modal-b" id="drillBody"></div>
+    <div class="modal-f">
+      <span class="muted" style="font-size:12px">اضغط على أي مهمة لفتحها · <span class="en">Click a task to open it</span></span>
+      <button type="button" class="btn sec sm" id="drillCsv"><i data-lucide="download"></i>تصدير هذه القائمة</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 <div class="loading" id="loading">جارٍ التحميل… · Loading…</div>
 
 <?!= include('Logos') ?>
 <script>
 /* =====================================================================
-   IT Task List Management — v3.4  (runs inside the Apps Script Web App)
+   IT Task List Management — v3.5  (runs inside the Apps Script Web App)
    Access: @sr.edu.sa accounts on the AllowedUsers list (SRU Secure Access Kit v1.4).
    Look:   SRU Brand Kit, linked from https://ictsru.github.io/brand (tech background, brand bar, footer, logos).
    Data arrives with the page (BOOT); every change goes through google.script.run,
    and the server re-checks the signed-in account on every call.
    ===================================================================== */
-const CONFIG = { VERSION: 'v3.4' };
+const CONFIG = { VERSION: 'v3.5' };
 const BOOT = <?!= dataJson ?>;
 const ME = (BOOT && BOOT.me) || { email: '', name: '', role: 'user' };
 
@@ -877,19 +911,69 @@ function drawChart(id,cfg){
   if(state.charts[id]) state.charts[id].destroy();
   state.charts[id]=new Chart(document.getElementById(id),cfg);
 }
+/* ---------- Drill-down: click a number → the tasks behind it (v3.5) ---------- */
+const DRILL = {
+  total:     ['جميع المهام','All tasks',                 l=>l],
+  open:      ['المهام المفتوحة','Open',                  l=>l.filter(isOpen)],
+  inprog:    ['قيد التنفيذ','In progress',               l=>l.filter(t=>t.Status==='in_progress')],
+  onhold:    ['المهام المعلّقة','On hold',               l=>l.filter(t=>t.Status==='on_hold')],
+  overdue:   ['المهام المتأخرة','Overdue',               l=>l.filter(isOverdue)],
+  review:    ['بانتظار المراجعة','Under review',         l=>l.filter(t=>t.Status==='under_review')],
+  progress:  ['المهام المحتسبة في نسبة الإنجاز','Progress — all non-cancelled tasks', l=>l.filter(t=>t.Status!=='cancelled')],
+  completed: ['المهام المكتملة','Completed',             l=>l.filter(t=>t.Status==='completed')],
+  closed:    ['نسبة الإكمال — المهام المكتملة','Closed', l=>l.filter(t=>t.Status==='completed')],
+  ontime:    ['المكتملة في الموعد','Completed on time',   l=>l.filter(onTime)]
+};
+const drillState = { list:[], name:'' };
+/** Attributes that make an element open the drill-down (scope: dash | sum; optional key/val narrows to a member or sector). */
+const drillAttr = (metric, scope, key, val) =>
+  `data-drill="${metric}" data-scope="${scope}"${key?` data-key="${esc(key)}" data-val="${esc(val)}"`:''} tabindex="0" role="button" title="اضغط لعرض المهام · Show tasks"`;
+function drillBase(scope){
+  if(scope==='dash'){ const sec=$('#dashSector').value; return { list: state.tasks.filter(t=>!sec||t.Sector===sec), where: sec?lbl(SECTORS,sec,true):'كل القطاعات' }; }
+  const f=$('#sFrom').value, to=$('#sTo').value, se=$('#sSector').value;
+  const parts=[se?lbl(SECTORS,se,true):'كل القطاعات']; if(f||to) parts.push(`${f||'…'} → ${to||'…'}`);
+  return { list: summaryList(), where: parts.join(' · ') };
+}
+function openDrill(metric, scope, key, val){
+  const d=DRILL[metric]; if(!d) return;
+  const base=drillBase(scope);
+  let list=base.list, where=base.where;
+  if(key){ list=list.filter(t=>t[key]===val); where=(key==='Sector'?lbl(SECTORS,val,true):val)+' · '+where; }
+  list=d[2](list).slice().sort((a,b)=>{
+    const po={critical:0,high:1,medium:2,low:3};
+    return (isOverdue(b)-isOverdue(a)) || (isOpen(b)-isOpen(a)) || ((a.DueDate||'9999').localeCompare(b.DueDate||'9999')) || ((po[a.Priority]??9)-(po[b.Priority]??9));
+  });
+  drillState.list=list; drillState.name=d[1].replace(/[^A-Za-z]+/g,'_');
+  $('#drillTitle').innerHTML=`${esc(d[0])} · <span class="en">${esc(d[1])}</span><small>${esc(where)}</small>`;
+  $('#drillCount').textContent=list.length;
+  $('#drillBody').innerHTML = list.length ? `<table><thead><tr><th>الرقم</th><th>المهمة</th><th>القطاع</th><th>المُسند إليه</th><th>الأولوية</th><th>الاستحقاق</th><th>الحالة</th><th>الإنجاز</th></tr></thead><tbody>${
+    list.map(t=>{ const od=isOverdue(t), n=attOf(t.TaskID).length; return `<tr data-open="${esc(t.TaskID)}" tabindex="0">
+      <td class="id">${esc(t.TaskID)}</td>
+      <td><b>${esc(t.Title)}</b>${n?`<span class="att-count"><i data-lucide="paperclip"></i>${n}</span>`:''}</td>
+      <td>${esc(t.Sector)}</td><td>${esc(t.AssignedTo)||'—'}</td>
+      <td><span class="chip p-${esc(t.Priority)}">${esc(lbl(PRIORITY,t.Priority))}</span></td>
+      <td class="${od?'overdue':''}">${fmtDate(t.DueDate)}${od?`<div style="font-size:11px">متأخرة ${daysLate(t)} يوم</div>`:''}</td>
+      <td><span class="chip s-${esc(t.Status)}">${esc(lbl(STATUS,t.Status))}</span></td>
+      <td><div class="bar"><i style="width:${t.Status==='completed'?100:t.Progress}%"></i></div><span style="font-size:11px">${t.Status==='completed'?100:t.Progress}%</span></td></tr>`; }).join('')}</tbody></table>`
+    : '<div class="empty">لا توجد مهام ضمن هذا الرقم · No tasks</div>';
+  const m=$('#drill'); m.hidden=false; document.body.style.overflow='hidden'; icons();
+  setTimeout(()=>$('#drillClose').focus(),0);
+}
+function closeDrill(){ $('#drill').hidden=true; document.body.style.overflow=''; }
+
 function renderDashboard(){
   const sec=$('#dashSector').value;
   const list=state.tasks.filter(t=>!sec||t.Sector===sec);
   const m=metrics(list);
-  const tile=(cls,l,en,v,sub)=>`<div class="kpi ${cls}"><div class="k-lbl">${l} · <span class="en">${en}</span></div><div class="k-val">${v}</div><div class="k-sub">${sub||''}</div></div>`;
+  const tile=(cls,l,en,v,sub,metric)=>`<div class="kpi ${cls}" ${drillAttr(metric,'dash')}><div class="k-lbl">${l} · <span class="en">${en}</span></div><div class="k-val">${v}</div><div class="k-sub">${sub||''}</div></div>`;
   $('#kpis').innerHTML =
-    tile('','إجمالي المهام','Total',m.total,'')+
-    tile('blue','المفتوحة','Open',m.open,`قيد التنفيذ ${m.inprog} · معلّقة ${m.onhold}`)+
-    tile('danger','المتأخرة','Overdue',m.overdue, m.open?`${Math.round(m.overdue/m.open*100)}% من المفتوحة`:'')+
-    tile('warn','بانتظار المراجعة','Under review',m.review,'')+
-    tile('','نسبة الإنجاز','Progress',m.progress+'%','متوسط تقدّم جميع المهام')+
-    tile('ok','المكتملة','Completed',m.completed,`نسبة الإكمال ${m.rate}%`)+
-    tile('ok','الإنجاز في الموعد','On-time',pct(m.ontimeRate),m.completed?`${m.ontime} من ${m.completed}`:'لا توجد مهام مكتملة بعد');
+    tile('','إجمالي المهام','Total',m.total,'','total')+
+    tile('blue','المفتوحة','Open',m.open,`قيد التنفيذ ${m.inprog} · معلّقة ${m.onhold}`,'open')+
+    tile('danger','المتأخرة','Overdue',m.overdue, m.open?`${Math.round(m.overdue/m.open*100)}% من المفتوحة`:'','overdue')+
+    tile('warn','بانتظار المراجعة','Under review',m.review,'','review')+
+    tile('','نسبة الإنجاز','Progress',m.progress+'%','متوسط تقدّم جميع المهام','progress')+
+    tile('ok','المكتملة','Completed',m.completed,`نسبة الإكمال ${m.rate}%`,'completed')+
+    tile('ok','الإنجاز في الموعد','On-time',pct(m.ontimeRate),m.completed?`${m.ontime} من ${m.completed}`:'لا توجد مهام مكتملة بعد','ontime');
 
   if(window.Chart){
     Chart.defaults.font.family="'Cairo',Tahoma,Arial,sans-serif"; Chart.defaults.color='#6b5a80';
@@ -935,13 +1019,14 @@ function summaryList(){
 }
 function renderSummary(){
   const list=summaryList(), m=metrics(list);
-  const cell=(v,l)=>`<div class="sum-cell"><b>${v}</b><span>${l}</span></div>`;
-  $('#sumHead').innerHTML=cell(m.total,'إجمالي · Total')+cell(m.open,'مفتوحة · Open')+cell(m.completed,'مكتملة · Completed')+cell(m.overdue,'متأخرة · Overdue')+cell(m.review,'قيد المراجعة · Review')+cell(m.progress+'%','نسبة الإنجاز · Progress')+cell(m.rate+'%','نسبة الإكمال · Closed')+cell(pct(m.ontimeRate),'في الموعد · On-time');
+  const cell=(v,l,metric)=>`<div class="sum-cell" ${drillAttr(metric,'sum')}><b>${v}</b><span>${l}</span></div>`;
+  $('#sumHead').innerHTML=cell(m.total,'إجمالي · Total','total')+cell(m.open,'مفتوحة · Open','open')+cell(m.completed,'مكتملة · Completed','completed')+cell(m.overdue,'متأخرة · Overdue','overdue')+cell(m.review,'قيد المراجعة · Review','review')+cell(m.progress+'%','نسبة الإنجاز · Progress','progress')+cell(m.rate+'%','نسبة الإكمال · Closed','closed')+cell(pct(m.ontimeRate),'في الموعد · On-time','ontime');
   const group=(key,keys)=>{
     const rows=keys.map(k=>{ const g=list.filter(t=>t[key]===k); return {k,g,m:metrics(g)}; }).filter(r=>r.g.length);
     if(!rows.length) return '<div class="empty">لا توجد بيانات للفترة المحددة</div>';
     return `<table><thead><tr><th>${key==='AssignedTo'?'العضو · Member':'القطاع · Sector'}</th><th>الإجمالي</th><th>مفتوحة</th><th>قيد التنفيذ</th><th>متأخرة</th><th>مكتملة</th><th>نسبة الإنجاز</th><th>نسبة الإكمال</th><th>في الموعد</th></tr></thead><tbody>${
-      rows.map(r=>`<tr><td><b>${esc(key==='Sector'?lbl(SECTORS,r.k,true):r.k)}</b></td><td>${r.m.total}</td><td>${r.m.open}</td><td>${r.m.inprog}</td><td class="${r.m.overdue?'overdue':''}">${r.m.overdue}</td><td>${r.m.completed}</td><td><div class="bar"><i style="width:${r.m.progress}%"></i></div><b>${r.m.progress}%</b></td><td>${r.m.rate}%</td><td>${pct(r.m.ontimeRate)}</td></tr>`).join('')}</tbody></table>`;
+      rows.map(r=>{ const n=(v,metric)=>`<a class="drill-num" href="#" ${drillAttr(metric,'sum',key,r.k)}>${v}</a>`;
+        return `<tr><td><b>${esc(key==='Sector'?lbl(SECTORS,r.k,true):r.k)}</b></td><td>${n(r.m.total,'total')}</td><td>${n(r.m.open,'open')}</td><td>${n(r.m.inprog,'inprog')}</td><td class="${r.m.overdue?'overdue':''}">${n(r.m.overdue,'overdue')}</td><td>${n(r.m.completed,'completed')}</td><td><div class="bar"><i style="width:${r.m.progress}%"></i></div>${n(r.m.progress+'%','progress')}</td><td>${n(r.m.rate+'%','closed')}</td><td>${n(pct(r.m.ontimeRate),'ontime')}</td></tr>`; }).join('')}</tbody></table>`;
   };
   $('#sumMember').innerHTML='<div class="muted" style="font-size:12px;padding:6px 10px"><b>نسبة الإنجاز</b> = متوسط نسبة التقدّم لكل المهام (المكتملة = 100%) · <b>نسبة الإكمال</b> = المهام المغلقة كمكتملة ÷ الإجمالي · <b>في الموعد</b> = المكتملة قبل تاريخ الاستحقاق</div>'+group('AssignedTo',[...new Set(list.map(t=>t.AssignedTo).filter(Boolean))].sort());
   $('#sumSector').innerHTML=group('Sector',Object.keys(SECTORS));
@@ -1021,6 +1106,20 @@ function init(){
   $('#btnPrintTask').addEventListener('click',()=>printView('view-register'));
   $('#btnRefresh').addEventListener('click',()=>reload());
   $('#dashSector').addEventListener('change',renderDashboard);
+  // drill-down: any element with data-drill (tiles, summary cells, table numbers)
+  const drillFrom=el=>openDrill(el.dataset.drill, el.dataset.scope, el.dataset.key, el.dataset.val);
+  document.addEventListener('click',e=>{ const d=e.target.closest('[data-drill]'); if(d){ e.preventDefault(); drillFrom(d); } });
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape' && !$('#drill').hidden){ closeDrill(); return; }
+    const d=e.target.closest && e.target.closest('[data-drill]');
+    if(d && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); drillFrom(d); return; }
+    const r=e.target.closest && e.target.closest('#drillBody tr[data-open]');
+    if(r && e.key==='Enter'){ closeDrill(); editTask(r.dataset.open); }
+  });
+  $('#drillClose').addEventListener('click',closeDrill);
+  $('#drill').addEventListener('click',e=>{ if(e.target.id==='drill') closeDrill(); });
+  $('#drillBody').addEventListener('click',e=>{ const r=e.target.closest('tr[data-open]'); if(r){ closeDrill(); editTask(r.dataset.open); } });
+  $('#drillCsv').addEventListener('click',()=>exportCsv(drillState.list,'IT_Tasks_'+(drillState.name||'list')));
   ['sFrom','sTo','sSector'].forEach(id=>$('#'+id).addEventListener('change',()=>{ if(id!=='sSector') $('#sQuick').value=''; renderSummary(); }));
   $('#sQuick').addEventListener('change',e=>{ const [a,b]=periodRange(e.target.value); $('#sFrom').value=a; $('#sTo').value=b; renderSummary(); });
   $('#btnPrintSum').addEventListener('click',()=>{ renderSummary(); printView('view-summary'); });

@@ -2,6 +2,15 @@
 
 All notable changes to this project are recorded here. Versions use one digit after the decimal point (… v1.8, v1.9, v2.0).
 
+## [v3.5] — 2026-11-15
+### Added
+- **Click a number → see its tasks.** Every number is now clickable and opens a window listing exactly the tasks behind it, with the current filters applied:
+  - Summary «المؤشرات العامة»: Total, Open, Completed, Overdue, Review, Progress, Closed, On-time (period + sector filters).
+  - Dashboard KPI tiles (sector filter).
+  - Every number in «الأداء حسب عضو الفريق» and «الأداء حسب القطاع» (narrowed to that member / sector).
+- Definitions: Open = not completed/cancelled · Overdue = open and past due date · Progress = all non-cancelled tasks · Closed/Completed = completed · On-time = completed on or before the due date.
+- In the window: ID, task (with paperclip count), sector, assignee, priority, due date (days late), status, progress; overdue first. Click a row to open the task; «تصدير هذه القائمة» exports the list (CSV/Excel). Close with ×, Esc or a click outside. Keyboard: Tab to a number, Enter to open.
+
 ## [v3.4] — 2026-11-15
 ### Added
 - **Task attachments** — section «5. المرفقات · Attachments» in the task form: drag & drop or click to choose, download, delete. On a new task, chosen files are queued and upload right after the first save.

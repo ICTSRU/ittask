@@ -1,4 +1,4 @@
-# إدارة مهام تقنية المعلومات · IT Task List Management — v3.4
+# إدارة مهام تقنية المعلومات · IT Task List Management — v3.5
 
 **Register, assign, track, and review departmental tasks** — Sulaiman Al Rajhi University · ICTD · IT Operations Center (ITOC)
 
@@ -115,10 +115,10 @@ Names are resolved from the `Team` tab (by e-mail), then the `AllowedUsers` name
 
 | Module | What it does |
 |---|---|
-| لوحة المعلومات · Dashboard | KPI tiles (total, open, overdue, under review, progress, completed, on-time), charts by status / sector / workload / priority, overdue and due-in-7-days lists |
+| لوحة المعلومات · Dashboard | KPI tiles (total, open, overdue, under review, progress, completed, on-time) — **click a tile to list its tasks**; charts by status / sector / workload / priority, overdue and due-in-7-days lists |
 | قائمة المهام · Task List | Search + 6 filters, table or Kanban, inline status change, CSV export |
 | تسجيل مهمة · Register | Task details → assignment → tracking (progress, update log) → review & sign-off → **attachments**; «أخرى» free-text |
-| الملخص والتقارير · Summary | Period/sector filters, headline figures, performance by member and sector, risk list, print/PDF, CSV, JSON backup |
+| الملخص والتقارير · Summary | Period/sector filters, headline figures, performance by member and sector, risk list, print/PDF, CSV, JSON backup; **every number opens the tasks behind it** |
 | فريق العمل · Team | Official names list with role, sector, e-mail, mobile, extension |
 
 Measures: **نسبة الإنجاز (Progress)** = average progress of non-cancelled tasks (completed = 100 %) · **نسبة الإكمال (Closed)** = completed ÷ total · **في الموعد (On-time)** = completed on or before the due date.
