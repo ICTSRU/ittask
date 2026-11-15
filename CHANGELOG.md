@@ -2,6 +2,21 @@
 
 All notable changes to this project are recorded here. Versions use one digit after the decimal point (… v1.8, v1.9, v2.0).
 
+## [v3.6] — 2026-11-15
+### Added
+- **Access levels** (column `role` in `AllowedUsers`), enforced on the server for every call and reflected on screen:
+  - `admin` — **تحكم كامل**: everything, incl. deleting tasks, Team edits and the permissions panel.
+  - `editor` — **إضافة وتعديل**: add/edit tasks, upload attachments, delete own uploads. No task deletion, no Team or permission changes.
+  - `viewer` — **اطلاع فقط**: read everything, open tasks read-only, download attachments, export. No changes.
+- **«الصلاحيات» panel** (admins only; hidden for others and refused by the server): list with level, status, last sign-in (from `AccessLog`) and notes; search and filters; add user (university e-mail only), change level, suspend/reactivate, remove. Changes apply immediately and are written to `Audit` (e.g. `viewer → editor`).
+- Safeguards: the owner always keeps full control and cannot be removed; an admin cannot downgrade, suspend or remove himself; adding an e-mail that is already listed is refused.
+- Header shows the signed-in user's level; read-only notice on task view for viewers.
+- `AllowedUsers` role column gets a dropdown (admin / editor / viewer).
+### Changed
+- Legacy role value `user` is treated as `editor` (no change for existing team members).
+- Deleting a task is now admin-only (was available to all listed users).
+- Team member edits are admin-only.
+
 ## [v3.5] — 2026-11-15
 ### Added
 - **Click a number → see its tasks.** Every number is now clickable and opens a window listing exactly the tasks behind it, with the current filters applied:

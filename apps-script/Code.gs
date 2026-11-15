@@ -1,6 +1,6 @@
 /**
  * =====================================================================
- *  IT Task List Management · إدارة مهام تقنية المعلومات — v3.5
+ *  IT Task List Management · إدارة مهام تقنية المعلومات — v3.6
  *  Sulaiman Al Rajhi University · ICTD · IT Operations Center (ITOC)
  *  Built on: SRU Secure Access Kit v1.4 · Look: SRU Brand Kit (linked from ictsru.github.io/brand)
  * ---------------------------------------------------------------------
@@ -20,7 +20,7 @@
 /* ▼▼▼ CONFIG — Secure Access Kit ▼▼▼ */
 const APP_NAME       = 'إدارة مهام تقنية المعلومات';
 const APP_NAME_EN    = 'IT Task List Management';
-const APP_VERSION    = '3.5';
+const APP_VERSION    = '3.6';
 const ALLOWED_DOMAIN = 'sr.edu.sa';
 const FAVICON_URL    = 'https://ictsru.github.io/ITOC/assets/itoc-logo.png';
 
@@ -77,6 +77,15 @@ const OPEN_EXCLUDE = ['completed','cancelled'];
 const LOG_HEADERS    = ['timestamp', 'date', 'time', 'day', 'email', 'result', 'version'];
 const DAYS_AR_       = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 const ACCESS_HEADERS = ['email', 'name', 'role', 'active', 'notes'];
+/* v3.6 — access levels (column "role" in AllowedUsers). Legacy value "user" = editor. */
+const ROLES = { admin: 3, editor: 2, viewer: 1 };          // admin = تحكم كامل · editor = إضافة وتعديل · viewer = اطلاع فقط
+function normRole_(r) {
+  r = String(r || '').trim().toLowerCase();
+  if (r === 'user' || r === 'edit' || r === 'إضافة وتعديل') return 'editor';
+  if (r === 'view' || r === 'read' || r === 'اطلاع فقط') return 'viewer';
+  if (r === 'تحكم كامل') return 'admin';
+  return ROLES[r] ? r : 'editor';
+}
 
 /* ============================== Web app ============================== */
 
@@ -121,7 +130,8 @@ function publicAttachments_() {
 }
 
 /* ================ Server calls from the page (google.script.run) ================
- *  EVERY function below starts with requireSruUser_() — the page check alone is not enough. */
+ *  EVERY function below starts with requireSruUser_() / requireRole_() — the page check alone is not enough.
+ *  v3.6 levels: viewer = read + download · editor = add/edit tasks, upload, delete own files · admin = everything. */
 
 function apiList() {
   const email = requireSruUser_();
@@ -129,9 +139,9 @@ function apiList() {
 }
 
 function apiSaveTask(task) {
-  const email = requireSruUser_();
+  const me = requireRole_('editor');
+  const email = me.email;
   return withLock_(function () {
-    const me = whoAmI_(email);
     const t = sanitize_(task, TASK_HEADERS);
     t.UpdatedBy = email;                                 // authoritative: set by the server, not the browser
     return { ok: true, task: saveTask_(t, me) };
@@ -139,7 +149,7 @@ function apiSaveTask(task) {
 }
 
 function apiDeleteTask(id) {
-  const email = requireSruUser_();
+  const email = requireRole_('admin').email;
   return withLock_(function () {
     id = String(id || '');
     deleteRow_(SHEET_TASKS, TASK_HEADERS, 'TaskID', id);
@@ -153,7 +163,7 @@ function apiDeleteTask(id) {
 
 /** Upload one file to a task. file = {name, mime, b64}. Returns the new attachment record. */
 function apiUploadAttachment(taskId, file) {
-  const email = requireSruUser_();
+  const email = requireRole_('editor').email;
   taskId = String(taskId || '');
   file = file || {};
   const name = safeFileName_(file.name);
@@ -195,8 +205,8 @@ function apiDownloadAttachment(attId) {
 
 /** Uploader or an admin may delete. The Drive file goes to trash (recoverable for 30 days). */
 function apiDeleteAttachment(attId) {
-  const email = requireSruUser_();
-  const me = whoAmI_(email);
+  const me = requireRole_('editor');                     // editors: own uploads only · admins: any
+  const email = me.email;
   return withLock_(function () {
     const a = findAttachment_(attId);
     if (a.UploadedBy.toLowerCase() !== email && me.role !== 'admin') throw new Error('الحذف متاح لمن رفع الملف أو للمسؤول فقط · Only the uploader or an admin can delete');
@@ -282,19 +292,111 @@ function showAttachmentsFolder() {
 }
 
 function apiSaveMember(member) {
-  const email = requireSruUser_();
+  const email = requireRole_('admin').email;
   return withLock_(function () {
     return { ok: true, member: saveMember_(sanitize_(member, TEAM_HEADERS), email) };
   });
 }
 
 function apiDeleteMember(id) {
-  const email = requireSruUser_();
+  const email = requireRole_('admin').email;
   return withLock_(function () {
     deleteRow_(SHEET_TEAM, TEAM_HEADERS, 'MemberID', String(id || ''));
     audit_('deleteMember', id, '', email);
     return { ok: true };
   });
+}
+
+/* =================== Permissions panel (v3.6, admins only) =================== */
+
+/** All rows of AllowedUsers + last sign-in from AccessLog. */
+function apiListUsers() {
+  requireRole_('admin');
+  return { ok: true, users: listUsers_(), owners: OWNER_EMAILS.map(function (e) { return e.toLowerCase(); }) };
+}
+
+/** Add or update one user: {email, name, role, active, notes, originalEmail?}. */
+function apiSaveUser(u) {
+  const me = requireRole_('admin');
+  u = u || {};
+  const email = String(u.email || '').trim().toLowerCase();
+  const original = String(u.originalEmail || '').trim().toLowerCase();
+  if (!/^[a-z0-9._%+-]+@sr\.edu\.sa$/.test(email)) throw new Error('البريد يجب أن يكون بريدًا جامعيًا صحيحًا name@sr.edu.sa');
+  const role = normRole_(u.role);
+  const active = u.active === true || String(u.active).toLowerCase() === 'true';
+  const owners = OWNER_EMAILS.map(function (e) { return e.toLowerCase(); });
+  if ((owners.indexOf(email) !== -1 || owners.indexOf(original) !== -1) && (role !== 'admin' || !active || (original && original !== email)))
+    throw new Error('لا يمكن تغيير صلاحية مالك المنصة أو إيقافه · The platform owner always keeps full control');
+  if ((email === me.email || original === me.email) && (role !== 'admin' || !active))
+    throw new Error('لا يمكنك خفض صلاحيتك أو إيقاف حسابك بنفسك · You cannot downgrade or deactivate yourself');
+  return withLock_(function () {
+    const sh = accessSheet_(true);
+    const rows = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 5).getValues() : [];
+    const findIdx = function (e) { for (let i = 0; i < rows.length; i++) if (String(rows[i][0]).trim().toLowerCase() === e) return i + 2; return -1; };
+    // add (no originalEmail) must never overwrite an existing row; edit targets the row of originalEmail
+    const target = original ? findIdx(original) : -1;
+    if (original && target < 0) throw new Error('المستخدم غير موجود · User not found');
+    const dup = findIdx(email);
+    if (dup > 0 && dup !== target) throw new Error('هذا البريد مضاف مسبقًا · This e-mail is already on the list');
+    const before = target > 0 ? rows[target - 2] : null;
+    const row = [email, clean_(u.name || ''), role, active, clean_(u.notes || '')];
+    if (target > 0) sh.getRange(target, 1, 1, 5).setValues([row]); else sh.appendRow(row);
+    roleValidation_(sh);
+    CacheService.getScriptCache().remove('acl_v1');           // takes effect immediately
+    audit_(target > 0 ? 'updateUser' : 'addUser', email,
+      before ? (normRole_(before[2]) + (before[3] === true ? '' : ' (inactive)') + ' → ' + role + (active ? '' : ' (inactive)')) : role + (active ? '' : ' (inactive)'),
+      me.email);
+    return { ok: true, users: listUsers_() };
+  });
+}
+
+function apiDeleteUser(email) {
+  const me = requireRole_('admin');
+  email = String(email || '').trim().toLowerCase();
+  if (OWNER_EMAILS.map(function (e) { return e.toLowerCase(); }).indexOf(email) !== -1) throw new Error('لا يمكن حذف مالك المنصة · The owner cannot be removed');
+  if (email === me.email) throw new Error('لا يمكنك حذف حسابك بنفسك · You cannot remove yourself');
+  return withLock_(function () {
+    const sh = accessSheet_(true);
+    const rows = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues() : [];
+    let idx = -1;
+    for (let i = 0; i < rows.length; i++) if (String(rows[i][0]).trim().toLowerCase() === email) { idx = i + 2; break; }
+    if (idx < 0) throw new Error('المستخدم غير موجود · User not found');
+    sh.deleteRow(idx);
+    CacheService.getScriptCache().remove('acl_v1');
+    audit_('removeUser', email, '', me.email);
+    return { ok: true, users: listUsers_() };
+  });
+}
+
+function listUsers_() {
+  const sh = accessSheet_(false);
+  if (!sh || sh.getLastRow() < 2) return [];
+  const last = {};
+  try {
+    const lg = getLogSheet_();
+    if (lg.getLastRow() > 1) {
+      lg.getRange(2, 1, lg.getLastRow() - 1, 6).getValues().forEach(function (r) {
+        const e = String(r[4] || '').toLowerCase();
+        if (r[5] === 'دخول' && e) { const t = r[0] instanceof Date ? Utilities.formatDate(r[0], TIMEZONE, 'yyyy-MM-dd HH:mm') : String(r[1] || '') + ' ' + String(r[2] || '').slice(0, 5); if (!last[e] || t > last[e]) last[e] = t; }
+      });
+    }
+  } catch (e) { /* log is optional */ }
+  return sh.getRange(2, 1, sh.getLastRow() - 1, 5).getValues()
+    .filter(function (r) { return String(r[0]).trim(); })
+    .map(function (r) {
+      const e = String(r[0]).trim().toLowerCase();
+      return { email: e, name: String(r[1] || ''), role: normRole_(r[2]), active: r[3] === true || String(r[3]).toUpperCase() === 'TRUE', notes: String(r[4] || ''), lastSignIn: last[e] || '' };
+    });
+}
+
+/** Dropdown on the role column of AllowedUsers (admin / editor / viewer). */
+function roleValidation_(sh) {
+  try {
+    const rule = SpreadsheetApp.newDataValidation().requireValueInList(['admin', 'editor', 'viewer'], true).setAllowInvalid(true)
+      .setHelpText('admin = تحكم كامل · editor = إضافة وتعديل · viewer = اطلاع فقط').build();
+    sh.getRange(2, 3, Math.max(sh.getMaxRows() - 1, 1), 1).setDataValidation(rule);
+    sh.getRange('C1').setNote('admin = تحكم كامل · editor = إضافة وتعديل · viewer = اطلاع فقط (القيمة القديمة user = editor)');
+  } catch (e) { /* cosmetic */ }
 }
 
 /* ============================ Task logic ============================ */
@@ -355,7 +457,7 @@ function newTaskId_() {
 /** Display name of the signed-in user: Team sheet (by e-mail) → AllowedUsers name → e-mail. */
 function whoAmI_(email) {
   email = String(email || '').toLowerCase();
-  let name = '', role = 'user';
+  let name = '', role = 'viewer';
   try {
     const m = readAll_(SHEET_TEAM, TEAM_HEADERS).filter(function (x) { return String(x.Email).trim().toLowerCase() === email; })[0];
     if (m) name = m.Name;
@@ -365,7 +467,7 @@ function whoAmI_(email) {
     if (sh && sh.getLastRow() > 1) {
       const r = sh.getRange(2, 1, sh.getLastRow() - 1, 3).getValues()
         .filter(function (x) { return String(x[0]).trim().toLowerCase() === email; })[0];
-      if (r) { if (!name && r[1] && r[1] !== 'Owner') name = String(r[1]); if (r[2]) role = String(r[2]); }
+      if (r) { if (!name && r[1] && r[1] !== 'Owner') name = String(r[1]); role = normRole_(r[2]); }
     }
   } catch (e) { /* ignore */ }
   if (!name) {
@@ -442,6 +544,17 @@ function currentEmail_() {
 function isAllowed_(email) {
   return !!email && email.endsWith('@' + ALLOWED_DOMAIN);
 }
+/** Signed-in, listed AND at least the given level ('viewer' < 'editor' < 'admin'). Returns {email, name, role}. */
+function requireRole_(min) {
+  const email = requireSruUser_();
+  const me = whoAmI_(email);
+  if ((ROLES[me.role] || 0) < (ROLES[min] || 99)) {
+    throw new Error(min === 'admin' ? 'هذا الإجراء متاح لصلاحية «تحكم كامل» فقط · Admins only'
+                                    : 'صلاحيتك «اطلاع فقط» — لا يمكنك التعديل · View-only access');
+  }
+  return me;
+}
+
 function requireSruUser_() {
   const email = currentEmail_();
   const status = accessStatus_(email);
@@ -487,7 +600,7 @@ function accessSheet_(create) {
     [260, 200, 100, 70, 260].forEach(function (w, i) { sh.setColumnWidth(i + 1, w); });
     sh.getRange(2, 4, 300, 1).insertCheckboxes();
     sh.getRange('A1').setNote('البريد الجامعي كاملًا — name@sr.edu.sa');
-    sh.getRange('C1').setNote('admin / user');
+    sh.getRange('C1').setNote('admin = تحكم كامل · editor = إضافة وتعديل · viewer = اطلاع فقط');
     sh.getRange('D1').setNote('ألغِ العلامة لإيقاف الوصول دون حذف الصف');
   }
   return sh;
@@ -508,7 +621,7 @@ function setupAccessList() {
   seed.forEach(function (r) {
     const e = String(r[0]).trim().toLowerCase();
     if (e && have.indexOf(e) === -1) {
-      kept.push([e, r[1] || '', r[2] || 'user', true, r[3] || 'added by setupAccessList']);
+      kept.push([e, r[1] || '', normRole_(r[2] || 'editor'), true, r[3] || 'added by setupAccessList']);
       have.push(e); added++;
     }
   });
@@ -517,6 +630,7 @@ function setupAccessList() {
   const rows = Math.max(n, kept.length, 50);
   sh.getRange(2, 4, rows, 1).insertCheckboxes();
   if (kept.length) sh.getRange(2, 1, kept.length, 5).setValues(kept);
+  roleValidation_(sh);
 
   CacheService.getScriptCache().remove('acl_v1');
   console.log('AllowedUsers ready: ' + kept.length + ' entries (' + added + ' added).');

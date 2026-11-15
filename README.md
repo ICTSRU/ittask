@@ -1,4 +1,4 @@
-# إدارة مهام تقنية المعلومات · IT Task List Management — v3.5
+# إدارة مهام تقنية المعلومات · IT Task List Management — v3.6
 
 **Register, assign, track, and review departmental tasks** — Sulaiman Al Rajhi University · ICTD · IT Operations Center (ITOC)
 
@@ -82,6 +82,18 @@ No `setup` run is needed — the sheet structure did not change.
 | Delete | Uploader or admin; file goes to Drive trash (30 days). Deleting a task trashes its attachments |
 | Trail | Each upload/deletion is written to the task's update log and `Audit` |
 | First time | Apps Script editor ▸ select **`setupAttachments`** ▸ **Run** ▸ allow Google Drive access (or sheet menu ▸ «تفعيل المرفقات وصلاحية Drive») |
+
+## 3a. Access levels and the «الصلاحيات» panel (v3.6)
+
+| Level (`role`) | Arabic | Can do |
+|---|---|---|
+| `admin` | تحكم كامل | Everything: add/edit/delete tasks and attachments, Team, permissions panel |
+| `editor` | إضافة وتعديل | Add/edit tasks, upload attachments, delete own uploads |
+| `viewer` | اطلاع فقط | View all pages and tasks (read-only), download attachments, export |
+
+- The panel is visible to admins only; every server call checks the level again.
+- Changes apply immediately and are logged in `Audit`. The owner (`OWNER_EMAILS`) always keeps full control; admins cannot downgrade or remove themselves.
+- Legacy value `user` = `editor`.
 
 ## 3. Access control
 

@@ -193,6 +193,19 @@ td.id{font-family:Consolas,monospace;font-size:12px;color:var(--muted);direction
 .print-ver{display:none;text-align:center;font-size:10px;color:var(--muted);margin-top:8px}
 .sum-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:12px}
 .sum-cell{border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;background:var(--bg)}
+/* ===== Access levels (v3.6): admin = تحكم كامل · editor = إضافة وتعديل · viewer = اطلاع فقط ===== */
+body:not([data-role="admin"]) .need-admin{display:none!important}
+body[data-role="viewer"] .need-editor{display:none!important}
+.role-chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;border-radius:999px;padding:2px 10px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35)}
+.r-admin{background:#fdecea;color:#b42318}.r-editor{background:var(--blue-light);color:var(--blue)}.r-viewer{background:var(--grey-bg);color:var(--grey)}
+.r-off{background:#f1f1f1;color:#888;text-decoration:line-through}
+.role-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.role-cards div{border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;background:var(--bg);font-size:12.5px}
+.role-cards b{display:block;margin-bottom:4px}
+@media(max-width:700px){.role-cards{grid-template-columns:1fr}}
+.view-only-note{display:none;background:var(--grey-bg);color:var(--grey);border-radius:var(--radius);padding:8px 12px;margin-bottom:12px;font-weight:700;font-size:13px}
+body[data-role="viewer"] .view-only-note{display:block}
+#taskForm input:disabled,#taskForm select:disabled,#taskForm textarea:disabled{background:var(--bg);color:var(--ink);opacity:1;cursor:default;border-style:dashed}
 /* ===== Drill-down from numbers (v3.5) ===== */
 [data-drill]{cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s}
 .kpi[data-drill]:hover,.sum-cell[data-drill]:hover,.kpi[data-drill]:focus-visible,.sum-cell[data-drill]:focus-visible{border-color:var(--purple);box-shadow:0 3px 10px rgba(80,30,140,.14);transform:translateY(-1px);outline:none}
@@ -256,7 +269,8 @@ a.drill-num:hover,a.drill-num:focus-visible{color:var(--purple);border-bottom-st
     </div>
     <div class="chips">
       <span class="conn live" id="connChip" title="مسجّل الدخول بحساب الجامعة"><span class="dot"></span><span id="connText" class="en"><?= userEmail ?></span></span>
-      <span class="ver">الإصدار <span class="en" id="verLabel">v3.5</span></span>
+      <span class="role-chip" id="roleChip" title="صلاحيتك · Your access level">—</span>
+      <span class="ver">الإصدار <span class="en" id="verLabel">v3.6</span></span>
     </div>
   </div>
 </div>
@@ -266,9 +280,10 @@ a.drill-num:hover,a.drill-num:focus-visible{color:var(--purple);border-bottom-st
   <div class="container" id="nav">
     <button data-view="dashboard" class="active"><i data-lucide="layout-dashboard"></i>لوحة المعلومات</button>
     <button data-view="tasks"><i data-lucide="list-checks"></i>قائمة المهام</button>
-    <button data-view="register"><i data-lucide="square-pen"></i>تسجيل مهمة</button>
+    <button data-view="register" class="need-editor"><i data-lucide="square-pen"></i>تسجيل مهمة</button>
     <button data-view="summary"><i data-lucide="file-bar-chart"></i>الملخص والتقارير</button>
     <button data-view="team"><i data-lucide="users"></i>فريق العمل</button>
+    <button data-view="perms" class="need-admin"><i data-lucide="shield"></i>الصلاحيات</button>
   </div>
 </nav>
 
@@ -307,7 +322,7 @@ a.drill-num:hover,a.drill-num:focus-visible{color:var(--purple);border-bottom-st
           <button data-mode="board"><i data-lucide="kanban"></i>لوحة</button>
         </div>
         <button class="btn sec" id="btnExportCsv"><i data-lucide="download"></i>تصدير Excel/CSV</button>
-        <button class="btn" data-goto="register" data-new="1"><i data-lucide="plus"></i>مهمة جديدة</button>
+        <button class="btn need-editor" data-goto="register" data-new="1"><i data-lucide="plus"></i>مهمة جديدة</button>
       </div>
     </div>
     <div class="filters no-print">
@@ -334,9 +349,10 @@ a.drill-num:hover,a.drill-num:focus-visible{color:var(--purple);border-bottom-st
     <div class="page-title">
       <h2 id="regTitle">تسجيل مهمة جديدة<small class="en">Register Task</small></h2>
       <div class="actions no-print">
-        <button class="btn sec" id="btnNew"><i data-lucide="file-plus"></i>نموذج جديد</button>
+        <button class="btn sec need-editor" id="btnNew"><i data-lucide="file-plus"></i>نموذج جديد</button>
       </div>
     </div>
+    <div class="view-only-note"><i data-lucide="eye"></i> صلاحيتك «اطلاع فقط» — يمكنك الاستعراض وتنزيل المرفقات دون تعديل · View-only access</div>
     <form id="taskForm" autocomplete="off">
       <div class="card">
         <h3><i data-lucide="clipboard-list"></i>1. بيانات المهمة · <span class="en muted">Task Details</span></h3>
@@ -371,7 +387,7 @@ a.drill-num:hover,a.drill-num:focus-visible{color:var(--purple);border-bottom-st
           <label class="f span2"><span class="lh">نسبة الإنجاز <span class="lbl-en">Progress %</span></span><div class="range-row"><input type="range" name="Progress" min="0" max="100" step="5" value="0"><output id="progOut">0%</output></div>
           </label>
           <label class="f"><span class="lh">تاريخ الإنجاز الفعلي <span class="lbl-en">Completed Date</span></span><input type="date" name="CompletedDate"></label>
-          <label class="f span-all"><span class="lh">إضافة تحديث جديد <span class="lbl-en">Add progress update</span></span><textarea name="NewUpdate" placeholder="مثال: تم إعداد البيئة التجريبية وجارٍ الاختبار…" style="min-height:60px"></textarea></label>
+          <label class="f span-all need-editor"><span class="lh">إضافة تحديث جديد <span class="lbl-en">Add progress update</span></span><textarea name="NewUpdate" placeholder="مثال: تم إعداد البيئة التجريبية وجارٍ الاختبار…" style="min-height:60px"></textarea></label>
           <div class="span-all"><div class="muted" style="font-size:12px;font-weight:700;margin-bottom:4px">سجل التحديثات · Update Log</div><div class="log" id="logView">—</div></div>
         </div>
       </div>
@@ -389,7 +405,7 @@ a.drill-num:hover,a.drill-num:focus-visible{color:var(--purple);border-bottom-st
 
       <div class="card" id="attCard">
         <h3><i data-lucide="paperclip"></i>5. المرفقات · <span class="en muted">Attachments</span> <span class="chip s-assigned" id="attCountChip" style="margin-inline-start:auto">0</span></h3>
-        <label class="dropzone no-print" id="dropZone">
+        <label class="dropzone no-print need-editor" id="dropZone">
           <input type="file" id="attInput" multiple hidden>
           <i data-lucide="upload-cloud"></i> اسحب الملفات هنا أو اضغط للاختيار · <span class="en">Drop files or click to choose</span>
           <small>حتى 10 ميجابايت للملف · 20 ملفًا لكل مهمة · PDF، صور، Word، Excel، PowerPoint، نص، ZIP · تُحفظ في Google Drive الخاص بالمنصة</small>
@@ -398,9 +414,9 @@ a.drill-num:hover,a.drill-num:focus-visible{color:var(--purple);border-bottom-st
       </div>
 
       <div class="actions no-print">
-        <button type="submit" class="btn" id="btnSave"><i data-lucide="save"></i>حفظ المهمة</button>
+        <button type="submit" class="btn need-editor" id="btnSave"><i data-lucide="save"></i>حفظ المهمة</button>
         <button type="button" class="btn sec" id="btnPrintTask"><i data-lucide="printer"></i>طباعة / PDF</button>
-        <button type="button" class="btn danger" id="btnDelete" style="display:none"><i data-lucide="trash-2"></i>حذف</button>
+        <button type="button" class="btn danger need-admin" id="btnDelete" style="display:none"><i data-lucide="trash-2"></i>حذف</button>
         <span class="muted" id="metaLine" style="align-self:center;font-size:12px"></span>
       </div>
     </form>
@@ -442,9 +458,40 @@ a.drill-num:hover,a.drill-num:focus-visible{color:var(--purple);border-bottom-st
   </section>
 
   <!-- ================= TEAM ================= -->
+  <section class="view" id="view-perms">
+    <div class="page-title"><h2>الصلاحيات<small class="en">Access &amp; Permissions — admins only</small></h2>
+      <div class="actions no-print"><button class="btn" id="btnUserNew"><i data-lucide="user-plus"></i>إضافة مستخدم</button></div></div>
+    <div class="role-cards">
+      <div><b><span class="chip r-admin">تحكم كامل · Admin</span></b>كل الصلاحيات: إضافة وتعديل وحذف المهام والمرفقات، فريق العمل، وهذه اللوحة.</div>
+      <div><b><span class="chip r-editor">إضافة وتعديل · Editor</span></b>إضافة المهام وتعديلها ورفع المرفقات وحذف ما رفعه. لا حذف للمهام ولا تعديل للفريق أو الصلاحيات.</div>
+      <div><b><span class="chip r-viewer">اطلاع فقط · Viewer</span></b>استعراض المهام ولوحة المعلومات والملخص، وتنزيل المرفقات والتصدير، دون أي تعديل.</div>
+    </div>
+    <div class="card no-print" id="userCard" hidden>
+      <h3><i data-lucide="user-cog"></i><span id="userFormTitle">إضافة مستخدم</span> · <span class="en muted">User</span></h3>
+      <form id="userForm" class="grid g4" autocomplete="off">
+        <input type="hidden" name="originalEmail">
+        <label class="f"><span class="lh">البريد الجامعي <span class="req">*</span><span class="lbl-en">E-mail</span></span><input name="email" type="email" dir="ltr" placeholder="name@sr.edu.sa" required></label>
+        <label class="f"><span class="lh">الاسم <span class="lbl-en">Name</span></span><input name="name" list="teamNamesList" placeholder="اختر أو اكتب الاسم"></label>
+        <label class="f"><span class="lh">الصلاحية <span class="req">*</span><span class="lbl-en">Access level</span></span><select name="role">
+          <option value="admin">تحكم كامل · Admin</option><option value="editor" selected>إضافة وتعديل · Editor</option><option value="viewer">اطلاع فقط · Viewer</option></select></label>
+        <label class="f"><span class="lh">الحالة <span class="lbl-en">Status</span></span><select name="active"><option value="true">نشط · Active</option><option value="false">موقوف · Suspended</option></select></label>
+        <label class="f span-all"><span class="lh">ملاحظات <span class="lbl-en">Notes</span></span><input name="notes" maxlength="200"></label>
+        <div class="actions span-all"><button class="btn" type="submit"><i data-lucide="save"></i>حفظ</button><button class="btn sec" type="button" id="btnUserCancel">إلغاء</button></div>
+      </form>
+      <datalist id="teamNamesList"></datalist>
+    </div>
+    <div class="filters no-print" style="grid-template-columns:2fr 1fr 1fr">
+      <input id="uSearch" placeholder="بحث بالاسم أو البريد… · Search">
+      <select id="uRole"><option value="">كل الصلاحيات</option><option value="admin">تحكم كامل</option><option value="editor">إضافة وتعديل</option><option value="viewer">اطلاع فقط</option></select>
+      <select id="uActive"><option value="">الكل</option><option value="true">النشطون</option><option value="false">الموقوفون</option></select>
+    </div>
+    <div class="table-wrap" id="usersTable"><div class="empty">جارٍ التحميل…</div></div>
+    <p class="muted" style="font-size:12px">التغييرات تسري فورًا. القائمة محفوظة في تبويب <span class="en">AllowedUsers</span> في الشيت، وكل تغيير يُسجَّل في <span class="en">Audit</span>. مالك المنصة يحتفظ دائمًا بصلاحية «تحكم كامل».</p>
+  </section>
+
   <section class="view" id="view-team">
     <div class="page-title"><h2>فريق العمل<small class="en">Team Members</small></h2></div>
-    <div class="card no-print">
+    <div class="card no-print need-admin">
       <h3><i data-lucide="user-plus"></i>إضافة / تعديل عضو · <span class="en muted">Add / Edit Member</span></h3>
       <form id="memberForm" class="grid g4" autocomplete="off">
         <input type="hidden" name="MemberID">
@@ -466,11 +513,11 @@ a.drill-num:hover,a.drill-num:focus-visible{color:var(--purple);border-bottom-st
 
 <footer class="sru-footer sru-tech-bg-dark"><div class="in">
   <div class="sru-support"><b>For Support:</b> Dial <span class="star" aria-label="star">*</span> <span class="or">or</span> Send email to: <a href="mailto:servicedesk@sr.edu.sa">servicedesk@sr.edu.sa</a></div>
-  <div class="ftr-note">© جامعة سليمان الراجحي — الإدارة التنفيذية للاتصالات وتقنية المعلومات · نظام إدارة المهام <span class="en">v3.5</span></div>
+  <div class="ftr-note">© جامعة سليمان الراجحي — الإدارة التنفيذية للاتصالات وتقنية المعلومات · نظام إدارة المهام <span class="en">v3.6</span></div>
   <a class="sru-itoc" href="https://ictsru.github.io/ITOC/#forms" target="_blank" rel="noopener" title="ITOC — IT Operations Center"><img src="https://ictsru.github.io/brand/logos/itoc-logo.png" data-logo="itoc" alt="ITOC — IT Operations Center" onerror="(window.__logoFail&amp;&amp;__logoFail(this))||(this.dataset.fail=1)"></a>
 </div></footer>
 
-<div class="print-ver">نظام إدارة مهام تقنية المعلومات · <span class="en">v3.5</span> · ITOC — جامعة سليمان الراجحي</div>
+<div class="print-ver">نظام إدارة مهام تقنية المعلومات · <span class="en">v3.6</span> · ITOC — جامعة سليمان الراجحي</div>
 <div class="modal no-print" id="drill" hidden role="dialog" aria-modal="true" aria-labelledby="drillTitle">
   <div class="modal-box">
     <div class="modal-h">
@@ -491,13 +538,13 @@ a.drill-num:hover,a.drill-num:focus-visible{color:var(--purple);border-bottom-st
 <?!= include('Logos') ?>
 <script>
 /* =====================================================================
-   IT Task List Management — v3.5  (runs inside the Apps Script Web App)
+   IT Task List Management — v3.6  (runs inside the Apps Script Web App)
    Access: @sr.edu.sa accounts on the AllowedUsers list (SRU Secure Access Kit v1.4).
    Look:   SRU Brand Kit, linked from https://ictsru.github.io/brand (tech background, brand bar, footer, logos).
    Data arrives with the page (BOOT); every change goes through google.script.run,
    and the server re-checks the signed-in account on every call.
    ===================================================================== */
-const CONFIG = { VERSION: 'v3.5' };
+const CONFIG = { VERSION: 'v3.6' };
 const BOOT = <?!= dataJson ?>;
 const ME = (BOOT && BOOT.me) || { email: '', name: '', role: 'user' };
 
@@ -607,7 +654,7 @@ function applyData(d){
   state.tasks = (d.tasks||[]).map(normalizeTask);
   state.team = d.team||[];
   state.attachments = d.attachments||[];
-  if(d.me){ ME.email=d.me.email; ME.name=d.me.name; ME.role=d.me.role; }
+  if(d.me){ ME.email=d.me.email; ME.name=d.me.name; ME.role=d.me.role; applyRole(); }
 }
 async function reload(silent){
   if(!silent) busy(true);
@@ -649,11 +696,72 @@ function refreshPeople(){
 }
 
 /* ---------- Navigation ---------- */
+const ROLE_LBL = { admin:['تحكم كامل','Admin'], editor:['إضافة وتعديل','Editor'], viewer:['اطلاع فقط','Viewer'] };
+function applyRole(){
+  if(ME.role==='user') ME.role='editor';                 // legacy value (the server already maps it)
+  const r = ROLE_LBL[ME.role] ? ME.role : 'viewer';
+  ME.role = r;
+  document.body.dataset.role = r;
+  const c=$('#roleChip'); c.textContent = ROLE_LBL[r][0]+' · '+ROLE_LBL[r][1]; c.className='role-chip r-'+r;
+}
+
+/* ---------- Permissions panel (admins only; the server checks again) ---------- */
+const users = { list:[], owners:[] };
+async function loadUsers(){
+  $('#usersTable').innerHTML='<div class="empty">جارٍ التحميل… · Loading…</div>';
+  try{ const r=await gsRun('apiListUsers'); users.list=r.users||[]; users.owners=r.owners||[]; renderUsers(); }
+  catch(e){ $('#usersTable').innerHTML=`<div class="empty">${esc(e.message)}</div>`; }
+}
+function renderUsers(){
+  const q=$('#uSearch').value.trim().toLowerCase(), fr=$('#uRole').value, fa=$('#uActive').value;
+  const list=users.list.filter(u=>(!q||`${u.email} ${u.name}`.toLowerCase().includes(q))&&(!fr||u.role===fr)&&(!fa||String(u.active)===fa))
+    .sort((a,b)=>(b.active-a.active)||((ROLE_LBL[a.role]?['admin','editor','viewer'].indexOf(a.role):9)-(ROLE_LBL[b.role]?['admin','editor','viewer'].indexOf(b.role):9))||a.email.localeCompare(b.email));
+  const cnt=k=>users.list.filter(u=>u.active&&u.role===k).length;
+  if(!list.length){ $('#usersTable').innerHTML='<div class="empty">لا توجد نتائج</div>'; return; }
+  $('#usersTable').innerHTML=`<div class="muted" style="font-size:12px;padding:8px 10px">النشطون: تحكم كامل ${cnt('admin')} · إضافة وتعديل ${cnt('editor')} · اطلاع فقط ${cnt('viewer')} · الموقوفون ${users.list.filter(u=>!u.active).length}</div>
+  <table><thead><tr><th>الاسم</th><th>البريد</th><th>الصلاحية</th><th>الحالة</th><th>آخر دخول</th><th>ملاحظات</th><th class="no-print"></th></tr></thead><tbody>${
+    list.map(u=>{ const owner=users.owners.includes(u.email), self=u.email===ME.email;
+      return `<tr><td><b>${esc(u.name)||'—'}</b>${owner?' <span class="chip s-new">المالك</span>':''}${self?' <span class="chip s-assigned">أنت</span>':''}</td>
+      <td><span class="en">${esc(u.email)}</span></td>
+      <td><span class="chip r-${u.role}">${ROLE_LBL[u.role][0]}</span></td>
+      <td>${u.active?'<span class="chip s-completed">نشط</span>':'<span class="chip r-off">موقوف</span>'}</td>
+      <td style="font-size:12px"><span class="en">${esc(u.lastSignIn)||'—'}</span></td>
+      <td style="font-size:12px">${esc(u.notes)}</td>
+      <td class="no-print" style="white-space:nowrap"><button class="icon-btn" data-uedit="${esc(u.email)}" title="تعديل"><i data-lucide="pencil"></i></button>${owner||self?'':`<button class="icon-btn del" data-udel="${esc(u.email)}" title="إزالة"><i data-lucide="user-x"></i></button>`}</td></tr>`; }).join('')}</tbody></table>`;
+  icons();
+}
+function userForm(u){
+  const f=$('#userForm'); f.reset();
+  f.originalEmail.value=u?u.email:''; f.email.value=u?u.email:''; f.name.value=u?u.name:''; f.role.value=u?u.role:'editor'; f.active.value=u?String(u.active):'true'; f.notes.value=u?u.notes:'';
+  const locked=u && (users.owners.includes(u.email)||u.email===ME.email);
+  f.role.disabled=!!locked; f.active.disabled=!!locked; f.email.readOnly=!!(u && users.owners.includes(u.email));
+  $('#userFormTitle').textContent=u?'تعديل صلاحية '+(u.name||u.email):'إضافة مستخدم';
+  $('#userCard').hidden=false; $('#userCard').scrollIntoView({behavior:'smooth',block:'start'}); f.email.focus();
+}
+async function saveUser(e){
+  e.preventDefault(); const f=$('#userForm');
+  const u={originalEmail:f.originalEmail.value, email:f.email.value.trim().toLowerCase(), name:f.name.value.trim(), role:f.role.value, active:f.active.value==='true', notes:f.notes.value.trim()};
+  if(!/^[a-z0-9._%+-]+@sr\.edu\.sa$/.test(u.email)){ toast('البريد يجب أن يكون بريدًا جامعيًا name@sr.edu.sa',true); return; }
+  busy(true);
+  try{ const r=await gsRun('apiSaveUser',u); users.list=r.users; renderUsers(); $('#userCard').hidden=true; toast(u.originalEmail?'تم تحديث الصلاحية ✓':'تمت إضافة المستخدم ✓'); }
+  catch(err){ toast(err.message,true); } finally{ busy(false); }
+}
+async function deleteUser(email){
+  const u=users.list.find(x=>x.email===email); if(!u) return;
+  if(!confirm(`إزالة ${u.name||email} من قائمة المصرّح لهم؟\nلن يتمكن من الدخول إلى المنصة.\n(لإيقاف مؤقت استخدم «موقوف» بدل الإزالة)`)) return;
+  busy(true);
+  try{ const r=await gsRun('apiDeleteUser',email); users.list=r.users; renderUsers(); toast('تمت الإزالة'); }
+  catch(err){ toast(err.message,true); } finally{ busy(false); }
+}
+
 function go(view){
+  if(view==='perms' && ME.role!=='admin') view='dashboard';
+  if(view==='register' && ME.role==='viewer' && !$('#taskForm').TaskID.value) view='tasks';
   $$('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));
   $$('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
   if(view==='dashboard') renderDashboard();
   if(view==='summary') renderSummary();
+  if(view==='perms') loadUsers();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -693,10 +801,10 @@ function renderTasks(){
       <td>${esc(t.AssignedTo)||'—'}</td>
       <td><span class="chip p-${esc(t.Priority)}">${esc(lbl(PRIORITY,t.Priority))}</span></td>
       <td class="${od?'overdue':''}">${fmtDate(t.DueDate)}${od?`<div style="font-size:11px">متأخرة ${daysLate(t)} يوم</div>`:''}</td>
-      <td><select class="quick-status no-print" data-id="${esc(t.TaskID)}" style="padding:3px 6px;font-size:12px;width:auto">${Object.entries(STATUS).map(([k,v])=>`<option value="${k}" ${k===t.Status?'selected':''}>${v[0]}</option>`).join('')}</select></td>
+      <td><select class="quick-status no-print" ${ME.role==="viewer"?"disabled":""} data-id="${esc(t.TaskID)}" style="padding:3px 6px;font-size:12px;width:auto">${Object.entries(STATUS).map(([k,v])=>`<option value="${k}" ${k===t.Status?'selected':''}>${v[0]}</option>`).join('')}</select></td>
       <td><div class="bar"><i style="width:${t.Progress}%"></i></div><span style="font-size:11px">${t.Progress}%</span></td>
       <td>${t.ReviewResult?esc(lbl(REVIEW,t.ReviewResult)):'<span class="muted">—</span>'}</td>
-      <td class="no-print" style="white-space:nowrap"><button class="icon-btn" data-edit="${esc(t.TaskID)}" title="تعديل"><i data-lucide="pencil"></i></button><button class="icon-btn del" data-del="${esc(t.TaskID)}" title="حذف"><i data-lucide="trash-2"></i></button></td>
+      <td class="no-print" style="white-space:nowrap"><button class="icon-btn" data-edit="${esc(t.TaskID)}" title="تعديل"><i data-lucide="pencil"></i></button><button class="icon-btn del need-admin" data-del="${esc(t.TaskID)}" title="حذف"><i data-lucide="trash-2"></i></button></td>
     </tr>`;
   }
   $('#taskTable').innerHTML=h+'</tbody></table>'; icons();
@@ -725,7 +833,7 @@ function attIcon(name){
             : ['doc','docx'].includes(e)?'doc' : ['ppt','pptx'].includes(e)?'ppt' : ['zip','rar','7z'].includes(e)?'zip' : '';
   return `<div class="ic ${cls}">${esc(e.toUpperCase().slice(0,4)||'FILE')}</div>`;
 }
-const canDeleteAtt = a => ME.role==='admin' || (a.UploadedBy||'').toLowerCase()===(ME.email||'').toLowerCase();
+const canDeleteAtt = a => ME.role==='admin' || (ME.role==='editor' && (a.UploadedBy||'').toLowerCase()===(ME.email||'').toLowerCase());
 function currentTaskId(){ return $('#taskForm').TaskID.value; }
 function renderAttachments(){
   const id=currentTaskId(), list=id?attOf(id):[];
@@ -827,6 +935,9 @@ function editTask(id){
   $('#regTitle').innerHTML=`تعديل المهمة <span class="en" style="font-size:14px;color:var(--muted)">${esc(t.TaskID)}</span><small class="en">Edit / Track / Review Task</small>`;
   $('#btnDelete').style.display='';
   state.pending=[]; renderAttachments();
+  const ro = ME.role==='viewer';
+  $$('#taskForm input, #taskForm select, #taskForm textarea').forEach(el=>{ if(el.id!=='attInput') el.disabled=ro; });
+  if(ro) $('#regTitle').innerHTML=`عرض المهمة <span class="en" style="font-size:14px;color:var(--muted)">${esc(t.TaskID)}</span><small class="en">View Task (read-only)</small>`;
   go('register');
 }
 async function saveTask(e){
@@ -1055,7 +1166,7 @@ function renderTeam(){
   const rows=TEAM_NAMES.map(n=>byName[n]||{MemberID:'',Name:n,Role:'',Sector:'',Email:'',Active:'Yes',Mobile:'',Extension:''})
     .concat(state.team.filter(m=>!TEAM_NAMES.includes(m.Name)));
   $('#teamTable').innerHTML=`<table><thead><tr><th>#</th><th>الاسم</th><th>الدور</th><th>القطاع</th><th>البريد</th><th>الجوال</th><th>التحويلة</th><th>نشط</th><th>مهام مفتوحة</th><th>متأخرة</th><th class="no-print"></th></tr></thead><tbody>${
-    rows.map((m,i)=>{const g=state.tasks.filter(t=>t.AssignedTo===m.Name);return `<tr><td class="muted">${i+1}</td><td><b>${esc(m.Name)}</b>${TEAM_NAMES.includes(m.Name)?'':' <span class="chip s-on_hold">خارج القائمة</span>'}</td><td>${esc(m.Role)||'<span class="muted">—</span>'}</td><td>${esc(m.Sector)||'—'}</td><td>${m.Email?`<a class="en" href="mailto:${esc(m.Email)}">${esc(m.Email)}</a>`:'—'}</td><td>${m.Mobile?`<a class="en" href="tel:${esc(m.Mobile)}">${esc(m.Mobile)}</a>`:'—'}</td><td><span class="en">${esc(m.Extension)||'—'}</span></td><td>${(m.Active||'Yes')==='No'?'لا':'نعم'}</td><td>${g.filter(isOpen).length}</td><td class="${g.filter(isOverdue).length?'overdue':''}">${g.filter(isOverdue).length}</td><td class="no-print"><button class="icon-btn" data-mname="${esc(m.Name)}" title="تعديل البيانات"><i data-lucide="pencil"></i></button>${m.MemberID?`<button class="icon-btn del" data-mdel="${esc(m.MemberID)}" title="مسح البيانات"><i data-lucide="eraser"></i></button>`:''}</td></tr>`;}).join('')}</tbody></table>
+    rows.map((m,i)=>{const g=state.tasks.filter(t=>t.AssignedTo===m.Name);return `<tr><td class="muted">${i+1}</td><td><b>${esc(m.Name)}</b>${TEAM_NAMES.includes(m.Name)?'':' <span class="chip s-on_hold">خارج القائمة</span>'}</td><td>${esc(m.Role)||'<span class="muted">—</span>'}</td><td>${esc(m.Sector)||'—'}</td><td>${m.Email?`<a class="en" href="mailto:${esc(m.Email)}">${esc(m.Email)}</a>`:'—'}</td><td>${m.Mobile?`<a class="en" href="tel:${esc(m.Mobile)}">${esc(m.Mobile)}</a>`:'—'}</td><td><span class="en">${esc(m.Extension)||'—'}</span></td><td>${(m.Active||'Yes')==='No'?'لا':'نعم'}</td><td>${g.filter(isOpen).length}</td><td class="${g.filter(isOverdue).length?'overdue':''}">${g.filter(isOverdue).length}</td><td class="no-print"><button class="icon-btn need-admin" data-mname="${esc(m.Name)}" title="تعديل البيانات"><i data-lucide="pencil"></i></button>${m.MemberID?`<button class="icon-btn del need-admin" data-mdel="${esc(m.MemberID)}" title="مسح البيانات"><i data-lucide="eraser"></i></button>`:''}</td></tr>`;}).join('')}</tbody></table>
   <div class="muted" style="font-size:12px;padding:8px">الأسماء من القائمة المعتمدة. أضف الدور والبريد والجوال والتحويلة لكل عضو؛ البريد يفعّل التذكيرات اليومية.</div>`;
   icons();
 }
@@ -1069,6 +1180,7 @@ function renderAll(){
 
 /* ---------- Wire-up ---------- */
 function init(){
+  applyRole();
   // logos come from the shared Brand repo; if it can't be reached, use the embedded copies (Logos.html)
   window.__logoFail=img=>{ const s=(window.ITOC_LOGOS||{})[img.dataset.logo]; img.onerror=null; if(s) img.src=s; return true; };
   $$('img[data-logo][data-fail]').forEach(window.__logoFail);
@@ -1106,6 +1218,16 @@ function init(){
   $('#btnPrintTask').addEventListener('click',()=>printView('view-register'));
   $('#btnRefresh').addEventListener('click',()=>reload());
   $('#dashSector').addEventListener('change',renderDashboard);
+  // permissions panel
+  $('#teamNamesList').innerHTML=TEAM_NAMES.map(n=>`<option value="${esc(n)}">`).join('');
+  $('#btnUserNew').addEventListener('click',()=>userForm(null));
+  $('#btnUserCancel').addEventListener('click',()=>{ $('#userCard').hidden=true; });
+  $('#userForm').addEventListener('submit',saveUser);
+  ['uSearch','uRole','uActive'].forEach(id=>$('#'+id).addEventListener('input',renderUsers));
+  $('#usersTable').addEventListener('click',e=>{
+    const ed=e.target.closest('[data-uedit]'); if(ed){ userForm(users.list.find(u=>u.email===ed.dataset.uedit)); return; }
+    const dl=e.target.closest('[data-udel]'); if(dl) deleteUser(dl.dataset.udel);
+  });
   // drill-down: any element with data-drill (tiles, summary cells, table numbers)
   const drillFrom=el=>openDrill(el.dataset.drill, el.dataset.scope, el.dataset.key, el.dataset.val);
   document.addEventListener('click',e=>{ const d=e.target.closest('[data-drill]'); if(d){ e.preventDefault(); drillFrom(d); } });
